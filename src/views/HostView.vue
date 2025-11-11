@@ -23,7 +23,7 @@ function setupTone() {
   Tone.start()
   // Simple polysynth through a compressor + meter to master
   const comp = new Tone.Compressor({ threshold: -24, ratio: 6 })
-  meter = new Tone.Meter({ channels: 2 })
+  meter = new Tone.Meter()
   synth = new Tone.PolySynth(Tone.Synth, {
     oscillator: { type: 'sine' },
     envelope: { attack: 0.02, decay: 0.2, sustain: 0.1, release: 0.8 }
@@ -33,7 +33,7 @@ function setupTone() {
 
 function mapAndPlay(data: any) {
   if (!synth) return
-  const { ax = 0, ay = 0, az = 0, alpha = 0, beta = 0, gamma = 0 } = data || {}
+  const { ax = 0, ay = 0, az = 0, beta = 0, gamma = 0 } = data || {}
   const accelMag = Math.min(30, Math.sqrt(ax*ax + ay*ay + az*az))
   const freq = 100 + accelMag * 20 // 100 Hz to ~700 Hz
   const detune = (gamma || 0) * 10
@@ -44,6 +44,7 @@ function mapAndPlay(data: any) {
   // choose a pitch from beta orientation
   const midi = 48 + Math.round(((beta || 0) + 180) / 30) // map -180..180 to steps
   const note = Tone.Frequency(midi, 'midi').toFrequency()
+
   synth.set({ detune })
   synth.volume.value = vol
   synth.triggerAttackRelease([freq, note], 0.1, time, vel)
@@ -51,7 +52,8 @@ function mapAndPlay(data: any) {
 
 function initPeer() {
   status.value = 'Connecting to signaling server...'
-  const p = new Peer(undefined, {
+
+  const p = new Peer('', {
     host: '0.peerjs.com',
     port: 443,
     path: '/',
@@ -127,6 +129,5 @@ onBeforeUnmount(() => {
 </template>
 
 <style scoped>
-.btn { @apply px-4 py-2 rounded bg-green-600 text-white hover:bg-green-700 disabled:opacity-50; }
-code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
+
 </style>

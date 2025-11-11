@@ -81,7 +81,7 @@ function stopSensors() {
 function connect() {
   if (!roomId.value) { status.value = 'Enter a Host ID'; return }
   status.value = 'Connecting...'
-  const p = new Peer(undefined, {
+  const p = new Peer('', {
     host: '0.peerjs.com',
     port: 443,
     path: '/',
@@ -155,12 +155,12 @@ onBeforeUnmount(() => {
     </div>
 
     <section class="grid grid-cols-2 gap-2 text-sm">
-      <div class="p-2 bg-gray-50 rounded">ax: {{ ax.toFixed(2) }}</div>
-      <div class="p-2 bg-gray-50 rounded">ay: {{ ay.toFixed(2) }}</div>
-      <div class="p-2 bg-gray-50 rounded">az: {{ az.toFixed(2) }}</div>
-      <div class="p-2 bg-gray-50 rounded">alpha: {{ alpha.toFixed(1) }}</div>
-      <div class="p-2 bg-gray-50 rounded">beta: {{ beta.toFixed(1) }}</div>
-      <div class="p-2 bg-gray-50 rounded">gamma: {{ gamma.toFixed(1) }}</div>
+      <div class="p-2 bg-base-100 rounded">ax: {{ ax.toFixed(2) }}</div>
+      <div class="p-2 bg-base-100 rounded">ay: {{ ay.toFixed(2) }}</div>
+      <div class="p-2 bg-base-100 rounded">az: {{ az.toFixed(2) }}</div>
+      <div class="p-2 bg-base-100 rounded">alpha: {{ alpha.toFixed(1) }}</div>
+      <div class="p-2 bg-base-100 rounded">beta: {{ beta.toFixed(1) }}</div>
+      <div class="p-2 bg-base-100 rounded">gamma: {{ gamma.toFixed(1) }}</div>
     </section>
 
     <p class="text-xs opacity-70">Tip: On iOS, you must tap "Start" to grant motion permissions.</p>
@@ -168,6 +168,5 @@ onBeforeUnmount(() => {
 </template>
 
 <style scoped>
-.btn { @apply px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50; }
-.input { @apply px-3 py-2 rounded border; }
+
 </style>
