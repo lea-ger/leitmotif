@@ -17,6 +17,11 @@ const routes: RouteRecordRaw[] = [
     component: () => import('./views/ClientView.vue'),
     props: true,
   },
+  {
+    path: '/editor',
+    name: 'editor',
+    component: () => import('./views/EditorView.vue'),
+  },
 ];
 
 export const router = createRouter({

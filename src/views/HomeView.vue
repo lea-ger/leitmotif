@@ -11,6 +11,7 @@ const roomId = ref('')
 
     <div class="flex gap-4 mt-6">
       <router-link to="/host" class="btn btn-primary">Start as Host</router-link>
+      <router-link to="/editor" class="btn btn-secondary">Node Editor</router-link>
       <div class="flex items-center gap-2">
         <input class="input input-bordered" v-model="roomId" placeholder="Enter Host ID" />
         <router-link
