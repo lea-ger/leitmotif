@@ -2,97 +2,164 @@
   <div class="editor-view">
     <!-- Toolbar -->
     <div class="toolbar bg-base-300 px-4 py-2 flex items-center gap-4 border-b border-base-content/10">
-      <h2 class="text-xl font-bold">Node Editor</h2>
-      
-      <div class="flex-1" />
-      
+      <ul class="menu menu-horizontal rounded-box">
+        <li>
+          <details>
+            <summary>Menu</summary>
+            <ul>
+              <li><a>Submenu 1</a></li>
+              <li><a>Submenu 2</a></li>
+            </ul>
+          </details>
+        </li>
+        <li>
+          <a>Tutorial</a>
+        </li>
+        <li><a>Wiki</a></li>
+      </ul>
+
+      <div class="flex-1"/>
       <!-- Controls -->
-      <button 
-        @click="toggleExecution"
-        :class="isPlaying ? 'btn-error' : 'btn-success'"
-        class="btn btn-sm"
+      <button
+          @click="toggleExecution"
+          :class="isPlaying ? 'btn-error' : 'btn-success animate-pulse'"
+          class="btn btn-square"
       >
-        {{ isPlaying ? '⏸ Stop' : '▶ Play' }}
+        <Icon v-if="isPlaying" icon="ph:play-bold"/>
+        <Icon v-else icon="ph:pause-bold"/>
       </button>
-      
-      <button 
-        @click="clearGraph"
-        class="btn btn-sm btn-ghost"
+
+      <button
+          @click="clearGraph"
+          class="btn btn-sm btn-ghost"
       >
-        🗑️ Clear
+        <Icon icon="ph:trash"/>
       </button>
-      
-      <div class="text-xs text-base-content/60">
+      <div class="flex-1"/>
+
+      <!-- Room Key Display -->
+      <div v-if="sessionStore.formattedRoomKey" class="flex items-center gap-2">
+        <span class="text-xs opacity-70">Room:</span>
+        <code class="px-3 py-1 bg-base-100 rounded font-mono text-sm font-bold">
+          {{ sessionStore.formattedRoomKey }}
+        </code>
+        <button
+            @click="showQRCode"
+            class="btn btn-square btn-ghost gap-2"
+            title="Show QR Code"
+        >
+          <Icon icon="ph:qr-code"/>
+        </button>
+      </div>
+      <button
+          v-else
+          @click="initializeRoom"
+          class="btn btn-sm btn-primary"
+      >
+        Create Room
+      </button>
+    </div>
+
+    <div class="editor-content relative">
+      <div class="absolute top-4 left-4 font-mono text-xs text-base-content/60">
         FPS: {{ currentFPS }}
       </div>
-    </div>
-    
-    <div class="editor-content">
       <!-- Node Library -->
-      <NodeLibrary />
-      
+      <NodeLibraryModal ref="nodeLibraryModalRef"/>
+
       <!-- Vue Flow Canvas -->
       <div class="flow-container" @drop="onDrop" @dragover.prevent>
         <VueFlow
-          v-model:nodes="flowNodes"
-          v-model:edges="flowEdges"
-          @connect="onConnect"
-          @nodes-change="onNodesChange"
-          @edges-change="onEdgesChange"
-          :connection-line-style="{ stroke: '#6366f1', strokeWidth: 2 }"
-          :default-zoom="0.8"
-          :min-zoom="0.1"
-          :max-zoom="2"
+            v-model:nodes="flowNodes"
+            v-model:edges="flowEdges"
+            @connect="onConnect"
+            @nodes-change="onNodesChange"
+            @edges-change="onEdgesChange"
+            :connection-line-style="{ stroke: '#6366f1', strokeWidth: 2 }"
+            :default-zoom="0.8"
+            :min-zoom="0.1"
+            :max-zoom="2"
         >
           <template #node-custom="nodeProps">
-            <NodeComponent :data="nodeProps.data" />
+            <NodeComponent :data="nodeProps.data"/>
           </template>
         </VueFlow>
       </div>
-      
+
       <!-- Peer Panel -->
-      <PeerPanel 
-        :peers="connectedPeers"
-        @add-peer="addPeerNode"
-        @remove-peer="removePeerNode"
-        @add-all-peers="addAllPeerNodes"
-        @remove-all-peers="removeAllPeerNodes"
-        @update-sensors="updatePeerSensors"
+      <PeerPanel
+          @add-peer-node="addPeerNodeToGraph"
+          @add-all-peers-node="addAllPeersNodeToGraph"
       />
+
+      <div class="fab">
+        <div
+            class="btn btn-lg btn-circle btn-primary"
+            @click="showNodeLibrary"
+        >
+          <Icon icon="ph:plus-bold"/>
+        </div>
+      </div>
     </div>
+
+    <!-- QR Code Modal -->
+    <QRCodeModal ref="qrModalRef"/>
+
+    <dialog class="modal"
+            :class="confirmDeleteChange ? 'modal-open' : ''"
+    >
+      <div class="modal-box">
+        <form method="dialog">
+          <button
+              class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2"
+              @click="confirmDeleteChange = null"
+          >✕
+          </button>
+        </form>
+        <h3 class="text-lg font-bold">Are you sure?</h3>
+        <button class="btn" @click="deleteNodeConfirmed">Confirm</button>
+      </div>
+    </dialog>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onBeforeUnmount, watch } from 'vue'
-import { VueFlow, useVueFlow } from '@vue-flow/core'
-import type { Connection as FlowConnection, NodeChange, EdgeChange } from '@vue-flow/core'
-import { useGraphStore } from '../stores/graphStore'
-import { GraphExecutor } from '../engine/GraphExecutor'
-import { registerAllNodes } from '../nodes'
-import type { BaseNode } from '../nodes/BaseNode'
-import NodeLibrary from '../components/NodeLibrary.vue'
+import {ref, onMounted, onBeforeUnmount, watch} from 'vue'
+import {VueFlow, useVueFlow, type NodeRemoveChange} from '@vue-flow/core'
+import type {Connection as FlowConnection, NodeChange, EdgeChange} from '@vue-flow/core'
+import {useGraphStore} from '../stores/graphStore'
+import {usePeerStore} from '../stores/peerStore'
+import {useSessionStore} from '../stores/sessionStore'
+import {GraphExecutor} from '../engine/GraphExecutor'
+import {registerAllNodes} from '../nodes'
+import type {BaseNode} from '../nodes/BaseNode'
+import {PeerNode} from '../nodes/input/PeerNode'
 import NodeComponent from '../components/NodeComponent.vue'
 import PeerPanel from '../components/PeerPanel.vue'
+import QRCodeModal from '../components/QRCodeModal.vue'
 import '@vue-flow/core/dist/style.css'
 import '@vue-flow/core/dist/theme-default.css'
+import {Icon} from "@iconify/vue";
+import NodeLibraryModal from "../components/NodeLibraryModal.vue";
 
 // Register all node types
 registerAllNodes()
 
 const graphStore = useGraphStore()
-const { flowNodes, flowEdges } = graphStore
+const peerStore = usePeerStore()
+const sessionStore = useSessionStore()
+const {flowNodes, flowEdges} = graphStore
 const executor = new GraphExecutor(60)
 
 const isPlaying = ref(false)
 const currentFPS = ref(0)
+const qrModalRef = ref<InstanceType<typeof QRCodeModal> | null>(null)
+const nodeLibraryModalRef = ref<InstanceType<typeof NodeLibraryModal> | null>(null)
+const confirmDeleteChange = ref<NodeRemoveChange | null>(null)
 let fpsInterval: number | null = null
 
-// Connected peers (placeholder - will be integrated with PeerJS)
-const connectedPeers = ref<any[]>([])
-
 // Vue Flow instance
-const { project } = useVueFlow()
+const {project, applyNodeChanges} = useVueFlow()
 
 onMounted(() => {
   // Start FPS counter
@@ -110,7 +177,7 @@ onBeforeUnmount(() => {
 watch([() => graphStore.nodeInstances, () => graphStore.allConnections], () => {
   const nodes = Array.from(graphStore.nodeInstances.values()) as BaseNode[]
   executor.setGraph(nodes, graphStore.allConnections)
-}, { deep: true })
+}, {deep: true})
 
 function toggleExecution() {
   if (isPlaying.value) {
@@ -128,17 +195,48 @@ function clearGraph() {
   }
 }
 
+function initializeRoom() {
+  sessionStore.generateRoomKey()
+  sessionStore.setIsHost(true)
+}
+
+function showQRCode() {
+  qrModalRef.value?.open()
+}
+
+function showNodeLibrary() {
+  nodeLibraryModalRef.value?.open()
+}
+
 function onDrop(event: DragEvent) {
+  event.preventDefault()
+
+  // Handle peer node drops
+  const peerNodeData = event.dataTransfer?.getData('application/peer-node')
+  if (peerNodeData) {
+    const data = JSON.parse(peerNodeData)
+    const position = project({
+      x: event.clientX,
+      y: event.clientY
+    })
+
+    if (data.type === 'peer') {
+      addPeerNodeToGraph(data.peerId, position)
+    } else if (data.type === 'all-peers') {
+      addAllPeersNodeToGraph(position)
+    }
+    return
+  }
+
+  // Handle regular node library drops
   const nodeType = event.dataTransfer?.getData('application/vueflow-nodetype')
   if (!nodeType) return
-  
-  // Get drop position relative to flow
+
   const position = project({
     x: event.clientX,
     y: event.clientY
   })
-  
-  // Add node to graph
+  debugger
   graphStore.addNode(nodeType, position)
 }
 
@@ -147,13 +245,25 @@ function onConnect(connection: FlowConnection) {
 }
 
 function onNodesChange(changes: NodeChange[]) {
-  changes.forEach(change => {
+  const nextChanges = []
+
+  for (const change of changes) {
     if (change.type === 'position' && change.position) {
       graphStore.updateNodePosition(change.id, change.position)
+      nextChanges.push(change)
     } else if (change.type === 'remove') {
-      graphStore.removeNode(change.id)
+      confirmDeleteChange.value = change
     }
-  })
+  }
+
+  applyNodeChanges(nextChanges)
+}
+
+function deleteNodeConfirmed() {
+  if (!confirmDeleteChange.value) return
+  graphStore.removeNode(confirmDeleteChange.value.id)
+  applyNodeChanges([confirmDeleteChange.value])
+  confirmDeleteChange.value = null
 }
 
 function onEdgesChange(changes: EdgeChange[]) {
@@ -165,65 +275,43 @@ function onEdgesChange(changes: EdgeChange[]) {
 }
 
 // Peer management
-function addPeerNode(peerId: string) {
-  const peer = connectedPeers.value.find(p => p.id === peerId)
+function addPeerNodeToGraph(peerId: string, position?: { x: number; y: number }) {
+  const peer = peerStore.getPeer(peerId)
   if (!peer) return
-  
-  const position = { x: 100, y: 100 + connectedPeers.value.indexOf(peer) * 150 }
-  const node = graphStore.addNode('gyro-input', position)
-  
-  if (node) {
-    peer.addedToGraph = true
-    // Will be implemented: node.setPeerId(peerId)
+
+  const pos = position || {x: 100, y: 100}
+  const node = graphStore.addNode('peer', pos)
+
+  if (node instanceof PeerNode) {
+    node.setPeer(peerId)
+    // Enable all capabilities by default
+    const capabilities = peer.capabilities.map(c => c.type)
+    node.configureCapabilities(capabilities)
   }
 }
 
-function removePeerNode(peerId: string) {
-  // Find and remove peer nodes
-  const peer = connectedPeers.value.find(p => p.id === peerId)
-  if (peer) {
-    peer.addedToGraph = false
-  }
-}
-
-function addAllPeerNodes() {
-  connectedPeers.value.forEach(peer => {
-    if (!peer.addedToGraph) {
-      addPeerNode(peer.id)
-    }
-  })
-}
-
-function removeAllPeerNodes() {
-  connectedPeers.value.forEach(peer => {
-    if (peer.addedToGraph) {
-      removePeerNode(peer.id)
-    }
-  })
-}
-
-function updatePeerSensors(peerId: string, sensors: any) {
-  // Will be implemented: Send message to peer to enable/disable sensors
-  console.log('Update sensors for peer', peerId, sensors)
+function addAllPeersNodeToGraph(position?: { x: number; y: number }) {
+  const pos = position || {x: 100, y: 100}
+  graphStore.addNode('all-peers', pos)
 }
 
 function startFPSCounter() {
   let frames = 0
   let lastTime = performance.now()
-  
+
   const countFrame = () => {
     frames++
     const now = performance.now()
-    
+
     if (now - lastTime >= 1000) {
       currentFPS.value = Math.round(frames * 1000 / (now - lastTime))
       frames = 0
       lastTime = now
     }
-    
+
     requestAnimationFrame(countFrame)
   }
-  
+
   requestAnimationFrame(countFrame)
 }
 </script>
@@ -251,17 +339,5 @@ function startFPSCounter() {
 .flow-container {
   flex: 1;
   position: relative;
-}
-
-:deep(.vue-flow__background) {
-  background-color: oklch(var(--b1));
-}
-
-:deep(.vue-flow__edge-path) {
-  stroke-width: 2;
-}
-
-:deep(.vue-flow__edge.selected .vue-flow__edge-path) {
-  stroke: oklch(var(--p));
 }
 </style>

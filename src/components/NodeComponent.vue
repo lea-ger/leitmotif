@@ -1,7 +1,7 @@
 <template>
   <div class="custom-node" :style="{ borderColor: nodeColor }">
     <div class="node-header">
-      <span class="node-icon">{{ metadata?.icon || '📦' }}</span>
+      <Icon :icon="metadata?.icon || ''" class="node-icon"></Icon>
       <span class="node-title">{{ node.name }}</span>
     </div>
     
@@ -20,12 +20,6 @@
         />
         <span class="port-label">{{ port.name }}</span>
       </div>
-    </div>
-    
-    <!-- Parameters -->
-    <div v-if="hasParameters" class="node-parameters">
-      <!-- Will be implemented with controls -->
-      <div class="text-xs text-base-content/50">Parameters...</div>
     </div>
     
     <!-- Output Ports -->
@@ -52,6 +46,7 @@ import { computed } from 'vue'
 import { Handle, Position } from '@vue-flow/core'
 import { BaseNode } from '../nodes/BaseNode'
 import { type NodeMetadata, DataType, DATA_TYPE_COLORS } from '../nodes/types'
+import { Icon } from "@iconify/vue";
 
 interface Props {
   data: {

@@ -4,7 +4,8 @@ export * from './BaseNode'
 export * from './NodeRegistry'
 
 // Input nodes
-export * from './input/GyroInputNode'
+export * from './input/PeerNode'
+export * from './input/AllPeersNode'
 
 // Processor nodes
 export * from './processor/MathMapNode'
@@ -19,7 +20,8 @@ export * from './utility/DebugNode'
 
 // Auto-register all nodes
 import { NodeRegistry } from './NodeRegistry'
-import { GyroInputNode } from './input/GyroInputNode'
+import { PeerNode } from './input/PeerNode'
+import { AllPeersNode } from './input/AllPeersNode'
 import { MathMapNode } from './processor/MathMapNode'
 import { ToneSynthNode } from './processor/ToneSynthNode'
 import { AudioOutputNode } from './output/AudioOutputNode'
@@ -28,7 +30,8 @@ import { DebugNode } from './utility/DebugNode'
 
 // Register all nodes
 export function registerAllNodes(): void {
-  NodeRegistry.register(GyroInputNode)
+  NodeRegistry.register(PeerNode)
+  NodeRegistry.register(AllPeersNode)
   NodeRegistry.register(MathMapNode)
   NodeRegistry.register(ToneSynthNode)
   NodeRegistry.register(AudioOutputNode)

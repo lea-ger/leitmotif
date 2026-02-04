@@ -13,100 +13,98 @@
       <h3 class="text-lg font-bold mb-4 flex items-center gap-2">
         <span>🌐</span>
         <span>Connected Peers</span>
-        <span class="badge badge-sm">{{ peers.length }}</span>
+        <span class="badge badge-sm">{{ connectedPeers.length }}</span>
       </h3>
       
-      <!-- Mass Actions -->
-      <div v-if="peers.length > 0" class="mb-4 flex gap-2">
-        <button 
-          @click="addAllPeers"
-          class="btn btn-xs btn-primary flex-1"
+      <!-- All Peers Aggregate Port -->
+      <div v-if="connectedPeers.length > 0" class="mb-4 p-3 bg-base-100 rounded-lg">
+        <div class="text-xs font-semibold mb-2">Mass Operations</div>
+        <div 
+          class="aggregate-port"
+          draggable="true"
+          @dragstart="startDragAllPeers"
         >
-          Add All
-        </button>
+          <span class="icon">👥</span>
+          <span class="text-xs">All Peers Node</span>
+        </div>
+      </div>
+
+      <!-- Mock Peer Button -->
+      <div class="mb-4">
         <button 
-          @click="removeAllPeers"
-          class="btn btn-xs btn-ghost flex-1"
+          @click="addMockPeer"
+          class="btn btn-sm btn-outline w-full gap-2"
         >
-          Remove All
+          <span><Icon icon="ph:robot" /></span>
+          <span>Add Mock Peer</span>
         </button>
       </div>
       
       <!-- Peer List -->
-      <div v-if="peers.length === 0" class="text-center py-8 text-base-content/50">
-        <div class="text-4xl mb-2">📱</div>
+      <div v-if="connectedPeers.length === 0" class="text-center py-8 text-base-content/50">
+        <div class="text-4xl mb-2"><Icon icon="ph:device-mobile" /></div>
         <div class="text-sm">No peers connected</div>
         <div class="text-xs mt-1">Scan QR code to join</div>
       </div>
       
       <div v-else class="space-y-2">
         <div
-          v-for="peer in peers"
+          v-for="peer in connectedPeers"
           :key="peer.id"
           class="peer-item bg-base-100 p-3 rounded-lg"
+          :class="{ 'mock-peer': peer.isMock }"
+          draggable="true"
+          @dragstart="startDragPeer($event, peer.id)"
         >
           <div class="flex items-center justify-between mb-2">
             <div class="flex items-center gap-2">
+              <span v-if="peer.isMock" class="text-sm">🤖</span>
               <div 
+                v-else
                 class="w-2 h-2 rounded-full"
-                :class="peer.active ? 'bg-success' : 'bg-error'"
+                :class="peer.connected ? 'bg-success' : 'bg-error'"
               />
               <span class="font-medium text-sm">{{ peer.name }}</span>
             </div>
             
-            <button
-              v-if="!peer.addedToGraph"
-              @click="emit('addPeer', peer.id)"
-              class="btn btn-xs btn-primary"
-            >
-              Add Node
-            </button>
-            <span v-else class="badge badge-sm badge-success">In Graph</span>
+            <div class="flex gap-1">
+              <button
+                @click="addPeerToGraph(peer.id)"
+                class="btn btn-xs btn-primary"
+              >
+                Add Node
+              </button>
+              <button
+                v-if="peer.isMock"
+                @click="removeMockPeer(peer.id)"
+                class="btn btn-xs btn-ghost"
+                title="Remove mock peer"
+              >
+                ✕
+              </button>
+            </div>
           </div>
           
-          <!-- Sensor Controls -->
+          <!-- Capability Controls -->
           <div class="text-xs space-y-1">
-            <label class="flex items-center gap-2 cursor-pointer">
+            <label 
+              v-for="cap in peer.capabilities"
+              :key="cap.type"
+              class="flex items-center gap-2 cursor-pointer"
+            >
               <input 
                 type="checkbox" 
-                v-model="peer.sensors.gyro"
-                @change="updatePeerSensors(peer.id)"
+                v-model="cap.enabled"
+                @change="updateCapability(peer.id, cap.type, cap.enabled)"
                 class="checkbox checkbox-xs"
               />
-              <span>Gyro/Accel</span>
-            </label>
-            <label class="flex items-center gap-2 cursor-pointer">
-              <input 
-                type="checkbox" 
-                v-model="peer.sensors.video"
-                @change="updatePeerSensors(peer.id)"
-                class="checkbox checkbox-xs"
-              />
-              <span>Video</span>
-            </label>
-            <label class="flex items-center gap-2 cursor-pointer">
-              <input 
-                type="checkbox" 
-                v-model="peer.sensors.audio"
-                @change="updatePeerSensors(peer.id)"
-                class="checkbox checkbox-xs"
-              />
-              <span>Audio</span>
-            </label>
-            <label class="flex items-center gap-2 cursor-pointer">
-              <input 
-                type="checkbox" 
-                v-model="peer.sensors.touch"
-                @change="updatePeerSensors(peer.id)"
-                class="checkbox checkbox-xs"
-              />
-              <span>Touch Events</span>
+              <span>{{ formatCapabilityName(cap.type) }}</span>
             </label>
           </div>
           
           <!-- Stats -->
           <div class="mt-2 pt-2 border-t border-base-300 text-xs text-base-content/60">
-            <div>Latency: {{ peer.latency }}ms</div>
+            <div>Last seen: {{ formatLastSeen(peer.lastSeen) }}</div>
           </div>
         </div>
       </div>
@@ -115,53 +113,77 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
-
-interface PeerData {
-  id: string
-  name: string
-  active: boolean
-  addedToGraph: boolean
-  latency: number
-  sensors: {
-    gyro: boolean
-    video: boolean
-    audio: boolean
-    touch: boolean
-  }
-}
-
-interface Props {
-  peers?: PeerData[]
-}
-
-const props = withDefaults(defineProps<Props>(), {
-  peers: () => []
-})
+import { ref, computed } from 'vue'
+import { usePeerStore } from '../stores/peerStore'
+import type { CapabilityType } from '../stores/types/peer'
+import { Icon } from "@iconify/vue";
 
 const emit = defineEmits<{
-  addPeer: [peerId: string]
-  removePeer: [peerId: string]
-  addAllPeers: []
-  removeAllPeers: []
-  updateSensors: [peerId: string, sensors: PeerData['sensors']]
+  addPeerNode: [peerId: string]
+  addAllPeersNode: []
 }>()
 
+const peerStore = usePeerStore()
 const isCollapsed = ref(false)
 
-function addAllPeers() {
-  emit('addAllPeers')
+const connectedPeers = computed(() => peerStore.connectedPeers)
+
+function addPeerToGraph(peerId: string) {
+  emit('addPeerNode', peerId)
 }
 
-function removeAllPeers() {
-  emit('removeAllPeers')
+function addMockPeer() {
+  peerStore.addMockPeer()
 }
 
-function updatePeerSensors(peerId: string) {
-  const peer = props.peers.find(p => p.id === peerId)
-  if (peer) {
-    emit('updateSensors', peerId, peer.sensors)
+function removeMockPeer(peerId: string) {
+  peerStore.removeMockPeer(peerId)
+}
+
+function startDragPeer(event: DragEvent, peerId: string) {
+  if (!event.dataTransfer) return
+  
+  event.dataTransfer.effectAllowed = 'copy'
+  event.dataTransfer.setData('application/peer-node', JSON.stringify({
+    type: 'peer',
+    peerId
+  }))
+}
+
+function startDragAllPeers(event: DragEvent) {
+  if (!event.dataTransfer) return
+  
+  event.dataTransfer.effectAllowed = 'copy'
+  event.dataTransfer.setData('application/peer-node', JSON.stringify({
+    type: 'all-peers'
+  }))
+}
+
+function updateCapability(peerId: string, capabilityType: CapabilityType, enabled: boolean) {
+  peerStore.setCapabilityEnabled(peerId, capabilityType, enabled)
+}
+
+function formatCapabilityName(type: string): string {
+  const names: Record<string, string> = {
+    'gyro': 'Gyroscope',
+    'accelerometer': 'Accelerometer',
+    'touch': 'Touch Events',
+    'audio': 'Audio',
+    'video': 'Video',
+    'canvas': 'Canvas',
+    'custom': 'Custom Data'
   }
+  return names[type] || type
+}
+
+function formatLastSeen(date: Date): string {
+  const now = Date.now()
+  const diff = now - date.getTime()
+  
+  if (diff < 1000) return 'just now'
+  if (diff < 60000) return `${Math.floor(diff / 1000)}s ago`
+  if (diff < 3600000) return `${Math.floor(diff / 60000)}m ago`
+  return `${Math.floor(diff / 3600000)}h ago`
 }
 </script>
 
@@ -197,9 +219,39 @@ function updatePeerSensors(peerId: string) {
 
 .peer-item {
   transition: transform 0.2s;
+  cursor: grab;
+}
+
+.peer-item:active {
+  cursor: grabbing;
 }
 
 .peer-item:hover {
   transform: translateX(-2px);
+}
+
+.aggregate-port {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  border: 2px dashed oklch(var(--bc) / 0.2);
+  border-radius: 0.5rem;
+  cursor: grab;
+  transition: all 0.2s;
+}
+
+.aggregate-port:hover {
+  border-color: oklch(var(--p));
+  background: oklch(var(--p) / 0.1);
+}
+
+.aggregate-port:active {
+  cursor: grabbing;
+}
+
+.mock-peer {
+  border: 1px dashed oklch(var(--bc) / 0.2);
+  background: oklch(var(--b1) / 0.5);
 }
 </style>

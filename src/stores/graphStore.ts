@@ -11,26 +11,28 @@ import { type Connection, canConnect, generateId } from '../nodes/types'
 export const useGraphStore = defineStore('graph', () => {
   // Node instances (our custom BaseNode objects)
   const nodeInstances = ref<Map<string, BaseNode>>(new Map())
-  
+
   // Vue Flow nodes (for rendering)
   const flowNodes = ref<FlowNode[]>([])
-  
+
   // Vue Flow edges (connections)
   const flowEdges = ref<FlowEdge[]>([])
-  
+
   // Internal connections map
   const connections = ref<Map<string, Connection>>(new Map())
-  
+
   /**
    * Add a new node to the graph
    */
   function addNode(type: string, position: { x: number; y: number }): BaseNode | null {
+    debugger
     const node = NodeRegistry.create(type)
+    console.log(node)
     if (!node) return null
-    
+
     node.position = position
     nodeInstances.value.set(node.id, node)
-    
+
     // Create Vue Flow node
     const metadata = NodeRegistry.getMetadata(type)
     flowNodes.value.push({
@@ -43,10 +45,11 @@ export const useGraphStore = defineStore('graph', () => {
       },
       label: metadata?.displayName || type
     })
-    
+    console.log(flowNodes.value)
+
     return node
   }
-  
+
   /**
    * Remove a node from the graph
    */
@@ -56,10 +59,10 @@ export const useGraphStore = defineStore('graph', () => {
       node.cleanup()
       nodeInstances.value.delete(nodeId)
     }
-    
+
     // Remove from Vue Flow
     flowNodes.value = flowNodes.value.filter(n => n.id !== nodeId)
-    
+
     // Remove all connections involving this node
     const toRemove: string[] = []
     connections.value.forEach((conn, id) => {
@@ -69,28 +72,28 @@ export const useGraphStore = defineStore('graph', () => {
     })
     toRemove.forEach(id => removeConnection(id))
   }
-  
+
   /**
    * Create a connection between two ports
    */
   function addConnection(flowConnection: FlowConnection): boolean {
     const sourceNode = nodeInstances.value.get(flowConnection.source)
     const targetNode = nodeInstances.value.get(flowConnection.target)
-    
+
     if (!sourceNode || !targetNode) return false
-    
+
     // Get ports
     const sourcePort = sourceNode.getPort(flowConnection.sourceHandle || '')
     const targetPort = targetNode.getPort(flowConnection.targetHandle || '')
-    
+
     if (!sourcePort || !targetPort) return false
-    
+
     // Validate connection
     if (!canConnect(sourcePort, targetPort)) {
       console.warn('Invalid connection: type mismatch')
       return false
     }
-    
+
     // Create connection
     const connection: Connection = {
       id: generateId(),
@@ -100,13 +103,13 @@ export const useGraphStore = defineStore('graph', () => {
       targetPortId: targetPort.id,
       dataType: sourcePort.dataType
     }
-    
+
     connections.value.set(connection.id, connection)
-    
+
     // Mark ports as connected
     sourcePort.connected = true
     targetPort.connected = true
-    
+
     // Add to Vue Flow
     flowEdges.value.push({
       id: connection.id,
@@ -116,35 +119,35 @@ export const useGraphStore = defineStore('graph', () => {
       targetHandle: targetPort.id,
       animated: true
     })
-    
+
     return true
   }
-  
+
   /**
    * Remove a connection
    */
   function removeConnection(connectionId: string): void {
     const connection = connections.value.get(connectionId)
     if (!connection) return
-    
+
     // Unmark ports
     const sourceNode = nodeInstances.value.get(connection.sourceNodeId)
     const targetNode = nodeInstances.value.get(connection.targetNodeId)
-    
+
     if (sourceNode) {
       const port = sourceNode.getPort(connection.sourcePortId)
       if (port) port.connected = false
     }
-    
+
     if (targetNode) {
       const port = targetNode.getPort(connection.targetPortId)
       if (port) port.connected = false
     }
-    
+
     connections.value.delete(connectionId)
     flowEdges.value = flowEdges.value.filter(e => e.id !== connectionId)
   }
-  
+
   /**
    * Update node position
    */
@@ -153,13 +156,13 @@ export const useGraphStore = defineStore('graph', () => {
     if (node) {
       node.position = position
     }
-    
+
     const flowNode = flowNodes.value.find(n => n.id === nodeId)
     if (flowNode) {
       flowNode.position = position
     }
   }
-  
+
   /**
    * Clear entire graph
    */
@@ -170,19 +173,19 @@ export const useGraphStore = defineStore('graph', () => {
     flowNodes.value = []
     flowEdges.value = []
   }
-  
+
   /**
    * Get all node instances as array
    */
   const nodes = computed(() => {
     return Array.from(nodeInstances.value.values())
   })
-  
+
   /**
    * Get all connections
    */
   const allConnections = computed(() => Array.from(connections.value.values()))
-  
+
   return {
     // State
     nodeInstances,
@@ -190,7 +193,7 @@ export const useGraphStore = defineStore('graph', () => {
     flowEdges,
     nodes,
     allConnections,
-    
+
     // Actions
     addNode,
     removeNode,
