@@ -69,6 +69,7 @@
 
       <!-- Vue Flow Canvas -->
       <div class="flow-container" @drop="onDrop" @dragover.prevent>
+        {{ flowNodes.map(it => it.id) }}
         <VueFlow
             v-model:nodes="flowNodes"
             v-model:edges="flowEdges"
@@ -124,7 +125,7 @@
 </template>
 
 <script setup lang="ts">
-import {ref, onMounted, onBeforeUnmount, watch} from 'vue'
+import {ref, onMounted, onBeforeUnmount, watch, computed} from 'vue'
 import {VueFlow, useVueFlow, type NodeRemoveChange} from '@vue-flow/core'
 import type {Connection as FlowConnection, NodeChange, EdgeChange} from '@vue-flow/core'
 import {useGraphStore} from '../stores/graphStore'
@@ -148,7 +149,8 @@ registerAllNodes()
 const graphStore = useGraphStore()
 const peerStore = usePeerStore()
 const sessionStore = useSessionStore()
-const {flowNodes, flowEdges} = graphStore
+const flowNodes = computed(() => graphStore.flowNodes)
+const flowEdges = computed(() => graphStore.flowEdges)
 const executor = new GraphExecutor(60)
 
 const isPlaying = ref(false)
@@ -236,7 +238,6 @@ function onDrop(event: DragEvent) {
     x: event.clientX,
     y: event.clientY
   })
-  debugger
   graphStore.addNode(nodeType, position)
 }
 

@@ -25,9 +25,7 @@ export const useGraphStore = defineStore('graph', () => {
    * Add a new node to the graph
    */
   function addNode(type: string, position: { x: number; y: number }): BaseNode | null {
-    debugger
     const node = NodeRegistry.create(type)
-    console.log(node)
     if (!node) return null
 
     node.position = position
@@ -35,7 +33,7 @@ export const useGraphStore = defineStore('graph', () => {
 
     // Create Vue Flow node
     const metadata = NodeRegistry.getMetadata(type)
-    flowNodes.value.push({
+    flowNodes.value = [...flowNodes.value, {
       id: node.id,
       type: 'custom',
       position,
@@ -44,8 +42,7 @@ export const useGraphStore = defineStore('graph', () => {
         metadata
       },
       label: metadata?.displayName || type
-    })
-    console.log(flowNodes.value)
+    }]
 
     return node
   }
