@@ -1,111 +1,144 @@
 <template>
-  <div class="peer-panel" :class="{ collapsed: isCollapsed }">
-    <!-- Toggle Button -->
-    <button 
-      @click="isCollapsed = !isCollapsed"
-      class="toggle-btn btn btn-sm btn-ghost"
-    >
-      {{ isCollapsed ? '◀' : '▶' }}
-    </button>
-    
-    <!-- Panel Content -->
-    <div v-if="!isCollapsed" class="panel-content bg-base-200 p-4">
-      <h3 class="text-lg font-bold mb-4 flex items-center gap-2">
-        <span>🌐</span>
-        <span>Connected Peers</span>
-        <span class="badge badge-sm">{{ connectedPeers.length }}</span>
-      </h3>
-      
-      <!-- All Peers Aggregate Port -->
-      <div v-if="connectedPeers.length > 0" class="mb-4 p-3 bg-base-100 rounded-lg">
-        <div class="text-xs font-semibold mb-2">Mass Operations</div>
-        <div 
-          class="aggregate-port"
-          draggable="true"
-          @dragstart="startDragAllPeers"
-        >
-          <span class="icon">👥</span>
-          <span class="text-xs">All Peers Node</span>
+  <div class="drawer" :class="{ 'drawer-open': isOpen }">
+    <input id="peer-drawer" type="checkbox" class="drawer-toggle" />
+    <div class="drawer-side" v-show="isOpen">
+      <label for="peer-drawer" aria-label="close sidebar" class="drawer-overlay" @click="isOpen = false"></label>
+      <div class="menu bg-base-200 text-base-content min-h-full w-80 p-4">
+        <!-- Header -->
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-lg font-bold flex items-center gap-2">
+            <Icon icon="ph:globe" class="text-xl" />
+            <span>Connected Peers</span>
+            <span class="badge badge-primary badge-sm">{{ connectedPeers.length }}</span>
+          </h3>
+          <button 
+            @click="isOpen = false"
+            class="btn btn-sm btn-ghost btn-circle"
+            title="Close Peers Panel"
+          >
+            <Icon icon="ph:caret-left" />
+          </button>
         </div>
-      </div>
 
-      <!-- Mock Peer Button -->
-      <div class="mb-4">
-        <button 
-          @click="addMockPeer"
-          class="btn btn-sm btn-outline w-full gap-2"
-        >
-          <span><Icon icon="ph:robot" /></span>
-          <span>Add Mock Peer</span>
-        </button>
-      </div>
-      
-      <!-- Peer List -->
-      <div v-if="connectedPeers.length === 0" class="text-center py-8 text-base-content/50">
-        <div class="text-4xl mb-2"><Icon icon="ph:device-mobile" /></div>
-        <div class="text-sm">No peers connected</div>
-        <div class="text-xs mt-1">Scan QR code to join</div>
-      </div>
-      
-      <div v-else class="space-y-2">
-        <div
-          v-for="peer in connectedPeers"
-          :key="peer.id"
-          class="peer-item bg-base-100 p-3 rounded-lg"
-          :class="{ 'mock-peer': peer.isMock }"
-          draggable="true"
-          @dragstart="startDragPeer($event, peer.id)"
-        >
-          <div class="flex items-center justify-between mb-2">
-            <div class="flex items-center gap-2">
-              <span v-if="peer.isMock" class="text-sm">🤖</span>
-              <div 
-                v-else
-                class="w-2 h-2 rounded-full"
-                :class="peer.connected ? 'bg-success' : 'bg-error'"
-              />
-              <span class="font-medium text-sm">{{ peer.name }}</span>
+        <!-- Content -->
+        <div>
+          <!-- Divider -->
+          <div class="divider">Actions</div>
+        
+        <!-- All Peers Aggregate Port -->
+        <div v-if="connectedPeers.length > 0" class="mb-3">
+          <div class="text-xs font-semibold text-base-content/70 mb-2">Mass Operations</div>
+          <div 
+            class="alert alert-info cursor-grab hover:shadow-lg transition-all"
+            draggable="true"
+            @dragstart="startDragAllPeers"
+          >
+            <Icon icon="ph:users-three" class="text-xl" />
+            <span class="text-sm">All Peers Node</span>
+          </div>
+        </div>
+
+        <!-- Mock Peer Button -->
+        <div class="mb-4">
+          <button 
+            @click="addMockPeer"
+            class="btn btn-sm btn-outline btn-secondary w-full gap-2"
+          >
+            <Icon icon="ph:robot" />
+            <span>Add Mock Peer</span>
+          </button>
+        </div>
+        
+        <!-- Divider -->
+        <div class="divider">Peers</div>
+
+        <!-- Peer List -->
+        <div v-if="connectedPeers.length === 0" class="card bg-base-100 shadow-xl">
+          <div class="card-body items-center text-center py-8">
+            <Icon icon="ph:device-mobile" class="text-5xl text-base-content/30 mb-2" />
+            <h4 class="card-title text-base">No peers connected</h4>
+            <p class="text-xs text-base-content/60">Scan QR code to join</p>
+          </div>
+        </div>
+        
+        <div v-else class="space-y-3">
+          <div
+            v-for="peer in connectedPeers"
+            :key="peer.id"
+            class="card bg-base-100 shadow-md hover:shadow-xl transition-shadow cursor-grab"
+            :class="{ 'border border-dashed border-base-content/20': peer.isMock }"
+            draggable="true"
+            @dragstart="startDragPeer($event, peer.id)"
+          >
+            <div class="card-body p-3">
+              <!-- Header -->
+              <div class="flex items-center justify-between mb-2">
+                <div class="flex items-center gap-2">
+                  <Icon v-if="peer.isMock" icon="ph:robot" class="text-lg text-secondary" />
+                  <div 
+                    v-else
+                    class="badge badge-sm"
+                    :class="peer.connected ? 'badge-success' : 'badge-error'"
+                  >
+                    {{ peer.connected ? 'Online' : 'Offline' }}
+                  </div>
+                  <span class="font-semibold text-sm">{{ peer.name }}</span>
+                </div>
+                
+                <div class="dropdown dropdown-end">
+                  <div tabindex="0" role="button" class="btn btn-xs btn-ghost btn-circle">
+                    <Icon icon="ph:dots-three-vertical" />
+                  </div>
+                  <ul tabindex="0" class="dropdown-content menu bg-base-200 rounded-box z-[1] w-40 p-2 shadow">
+                    <li>
+                      <a @click="addPeerToGraph(peer.id)">
+                        <Icon icon="ph:plus-circle" />
+                        Add Node
+                      </a>
+                    </li>
+                    <li v-if="peer.isMock">
+                      <a @click="removeMockPeer(peer.id)" class="text-error">
+                        <Icon icon="ph:trash" />
+                        Remove
+                      </a>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+              
+              <!-- Capability Controls -->
+              <div class="collapse collapse-arrow bg-base-200 rounded-box">
+                <input type="checkbox" /> 
+                <div class="collapse-title text-xs font-medium py-2">
+                  Capabilities ({{ peer.capabilities.filter(c => c.enabled).length }})
+                </div>
+                <div class="collapse-content text-xs">
+                  <div class="space-y-1">
+                    <label 
+                      v-for="cap in peer.capabilities"
+                      :key="cap.type"
+                      class="flex items-center gap-2 cursor-pointer p-1 hover:bg-base-300 rounded"
+                    >
+                      <input 
+                        type="checkbox" 
+                        v-model="cap.enabled"
+                        @change="updateCapability(peer.id, cap.type, cap.enabled)"
+                        class="checkbox checkbox-xs checkbox-primary"
+                      />
+                      <span>{{ formatCapabilityName(cap.type) }}</span>
+                    </label>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Stats -->
+              <div class="flex items-center gap-2 mt-2 text-xs text-base-content/60">
+                <Icon icon="ph:clock" />
+                <span>{{ formatLastSeen(peer.lastSeen) }}</span>
+              </div>
             </div>
-            
-            <div class="flex gap-1">
-              <button
-                @click="addPeerToGraph(peer.id)"
-                class="btn btn-xs btn-primary"
-              >
-                Add Node
-              </button>
-              <button
-                v-if="peer.isMock"
-                @click="removeMockPeer(peer.id)"
-                class="btn btn-xs btn-ghost"
-                title="Remove mock peer"
-              >
-                ✕
-              </button>
-            </div>
           </div>
-          
-          <!-- Capability Controls -->
-          <div class="text-xs space-y-1">
-            <label 
-              v-for="cap in peer.capabilities"
-              :key="cap.type"
-              class="flex items-center gap-2 cursor-pointer"
-            >
-              <input 
-                type="checkbox" 
-                v-model="cap.enabled"
-                @change="updateCapability(peer.id, cap.type, cap.enabled)"
-                class="checkbox checkbox-xs"
-              />
-              <span>{{ formatCapabilityName(cap.type) }}</span>
-            </label>
-          </div>
-          
-          <!-- Stats -->
-          <div class="mt-2 pt-2 border-t border-base-300 text-xs text-base-content/60">
-            <div>Last seen: {{ formatLastSeen(peer.lastSeen) }}</div>
-          </div>
+        </div>
         </div>
       </div>
     </div>
@@ -118,13 +151,21 @@ import { usePeerStore } from '../stores/peerStore'
 import type { CapabilityType } from '../stores/types/peer'
 import { Icon } from "@iconify/vue";
 
+const props = defineProps<{
+  isOpen?: boolean
+}>()
+
 const emit = defineEmits<{
   addPeerNode: [peerId: string]
   addAllPeersNode: []
+  'update:isOpen': [value: boolean]
 }>()
 
 const peerStore = usePeerStore()
-const isCollapsed = ref(false)
+const isOpen = computed({
+  get: () => props.isOpen ?? true,
+  set: (value) => emit('update:isOpen', value)
+})
 
 const connectedPeers = computed(() => peerStore.connectedPeers)
 
@@ -188,70 +229,15 @@ function formatLastSeen(date: Date): string {
 </script>
 
 <style scoped>
-.peer-panel {
-  position: relative;
-  width: 320px;
-  height: 100%;
-  border-left: 1px solid oklch(var(--bc) / 0.1);
-  transition: width 0.3s;
+.drawer-side {
+  z-index: 20;
 }
 
-.peer-panel.collapsed {
-  width: 40px;
-}
-
-.toggle-btn {
-  position: absolute;
-  left: 8px;
-  top: 8px;
-  z-index: 10;
-}
-
-.panel-content {
-  height: 100%;
-  overflow-y: auto;
-  padding-left: 48px;
-}
-
-.peer-panel.collapsed .panel-content {
-  display: none;
-}
-
-.peer-item {
-  transition: transform 0.2s;
-  cursor: grab;
-}
-
-.peer-item:active {
+.card:active {
   cursor: grabbing;
 }
 
-.peer-item:hover {
-  transform: translateX(-2px);
-}
-
-.aggregate-port {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem;
-  border: 2px dashed oklch(var(--bc) / 0.2);
-  border-radius: 0.5rem;
-  cursor: grab;
-  transition: all 0.2s;
-}
-
-.aggregate-port:hover {
-  border-color: oklch(var(--p));
-  background: oklch(var(--p) / 0.1);
-}
-
-.aggregate-port:active {
+.alert:active {
   cursor: grabbing;
-}
-
-.mock-peer {
-  border: 1px dashed oklch(var(--bc) / 0.2);
-  background: oklch(var(--b1) / 0.5);
 }
 </style>

@@ -61,44 +61,58 @@
     </div>
 
     <div class="editor-content relative">
-      <div class="absolute top-4 left-4 font-mono text-xs text-base-content/60">
-        FPS: {{ currentFPS }}
-      </div>
-      <!-- Node Library -->
-      <NodeLibraryModal ref="nodeLibraryModalRef"/>
-
-      <!-- Vue Flow Canvas -->
-      <div class="flow-container" @drop="onDrop" @dragover.prevent>
-        {{ flowNodes.map(it => it.id) }}
-        <VueFlow
-            v-model:nodes="flowNodes"
-            v-model:edges="flowEdges"
-            @connect="onConnect"
-            @nodes-change="onNodesChange"
-            @edges-change="onEdgesChange"
-            :connection-line-style="{ stroke: '#6366f1', strokeWidth: 2 }"
-            :default-zoom="0.8"
-            :min-zoom="0.1"
-            :max-zoom="2"
-        >
-          <template #node-custom="nodeProps">
-            <NodeComponent :data="nodeProps.data"/>
-          </template>
-        </VueFlow>
-      </div>
-
-      <!-- Peer Panel -->
+      <!-- Toggle button when panel is closed -->
+      <button 
+        v-if="!isPeerPanelOpen"
+        @click="isPeerPanelOpen = true"
+        class="btn btn-circle btn-primary absolute left-4 top-4 z-30"
+        title="Open Peers Panel"
+      >
+        <Icon icon="ph:users-three" />
+      </button>
+      
+      <!-- Peer Panel on Left Side -->
       <PeerPanel
+          v-model:is-open="isPeerPanelOpen"
           @add-peer-node="addPeerNodeToGraph"
           @add-all-peers-node="addAllPeersNodeToGraph"
       />
+      
+      <!-- Main Canvas Area -->
+      <div class="flex flex-col absolute w-full h-full">
+        <div class="absolute top-4 left-4 font-mono text-xs text-base-content/60 z-10">
+          FPS: {{ currentFPS }}
+        </div>
+        
+        <!-- Node Library -->
+        <NodeLibraryModal ref="nodeLibraryModalRef"/>
 
-      <div class="fab">
-        <div
-            class="btn btn-lg btn-circle btn-primary"
-            @click="showNodeLibrary"
-        >
-          <Icon icon="ph:plus-bold"/>
+        <!-- Vue Flow Canvas -->
+        <div class="flow-container" @drop="onDrop" @dragover.prevent>
+          <VueFlow
+              v-model:nodes="flowNodes"
+              v-model:edges="flowEdges"
+              @connect="onConnect"
+              @nodes-change="onNodesChange"
+              @edges-change="onEdgesChange"
+              :connection-line-style="{ stroke: '#6366f1', strokeWidth: 2 }"
+              :default-zoom="0.8"
+              :min-zoom="0.1"
+              :max-zoom="2"
+          >
+            <template #node-custom="nodeProps">
+              <NodeComponent :data="nodeProps.data"/>
+            </template>
+          </VueFlow>
+        </div>
+
+        <div class="fab">
+          <div
+              class="btn btn-lg btn-circle btn-primary"
+              @click="showNodeLibrary"
+          >
+            <Icon icon="ph:plus-bold"/>
+          </div>
         </div>
       </div>
     </div>
@@ -125,7 +139,7 @@
 </template>
 
 <script setup lang="ts">
-import {ref, onMounted, onBeforeUnmount, watch, computed} from 'vue'
+import {ref, onMounted, onBeforeUnmount, watch, computed, type WritableComputedRef} from 'vue'
 import {VueFlow, useVueFlow, type NodeRemoveChange} from '@vue-flow/core'
 import type {Connection as FlowConnection, NodeChange, EdgeChange} from '@vue-flow/core'
 import {useGraphStore} from '../stores/graphStore'
@@ -149,12 +163,23 @@ registerAllNodes()
 const graphStore = useGraphStore()
 const peerStore = usePeerStore()
 const sessionStore = useSessionStore()
-const flowNodes = computed(() => graphStore.flowNodes)
-const flowEdges = computed(() => graphStore.flowEdges)
+const flowNodes = computed({
+  get: () => graphStore.flowNodes,
+  set: (value) => {
+    graphStore.flowNodes = value
+  }
+})
+const flowEdges = computed({
+  get: () => graphStore.flowEdges,
+  set: (value) => {
+    graphStore.flowEdges = value
+  }
+})
 const executor = new GraphExecutor(60)
 
 const isPlaying = ref(false)
 const currentFPS = ref(0)
+const isPeerPanelOpen = ref(true)
 const qrModalRef = ref<InstanceType<typeof QRCodeModal> | null>(null)
 const nodeLibraryModalRef = ref<InstanceType<typeof NodeLibraryModal> | null>(null)
 const confirmDeleteChange = ref<NodeRemoveChange | null>(null)
