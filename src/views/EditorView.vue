@@ -22,11 +22,11 @@
       <!-- Controls -->
       <button
           @click="toggleExecution"
-          :class="isPlaying ? 'btn-error' : 'btn-success animate-pulse'"
+          :class="isPlaying ? 'btn-success animate-pulse' : 'btn-error'"
           class="btn btn-square"
       >
-        <Icon v-if="isPlaying" icon="ph:play-bold"/>
-        <Icon v-else icon="ph:pause-bold"/>
+        <Icon v-if="isPlaying" icon="ph:pause-bold"/>
+        <Icon v-else icon="ph:play-bold"/>
       </button>
 
       <button

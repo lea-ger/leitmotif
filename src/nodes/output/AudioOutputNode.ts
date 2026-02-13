@@ -8,6 +8,7 @@ import * as Tone from 'tone'
  */
 export class AudioOutputNode extends BaseNode {
   private connectedSources: Set<Tone.ToneAudioNode> = new Set()
+  private lastAudioSource: Tone.ToneAudioNode | null = null
   
   constructor(id?: string) {
     super('audio-output', id)
@@ -52,28 +53,56 @@ export class AudioOutputNode extends BaseNode {
     const volume = this.getParameter('volume')
     const muted = this.getParameter('muted')
     
-    // Disconnect all previous sources
-    this.connectedSources.forEach(source => {
-      try {
-        source.disconnect()
-      } catch (e) {
-        // Source might already be disconnected
+    // If muted, disconnect everything
+    if (muted) {
+      if (this.connectedSources.size > 0) {
+        this.connectedSources.forEach(source => {
+          try {
+            source.disconnect()
+          } catch (e) {
+            // Source might already be disconnected
+          }
+        })
+        this.connectedSources.clear()
+        this.lastAudioSource = null
       }
-    })
-    this.connectedSources.clear()
+      return
+    }
     
-    // Connect new source if available and not muted
-    if (audioSource && audioSource instanceof Tone.ToneAudioNode && !muted) {
-      try {
-        // Check if the audio source has a volume property
-        if ('volume' in audioSource && audioSource.volume) {
-          (audioSource as any).volume.value = volume
+    // Check if audio source has changed
+    const isSameSource = audioSource === this.lastAudioSource
+    
+    // Only reconnect if source changed
+    if (!isSameSource) {
+      // Disconnect all previous sources
+      this.connectedSources.forEach(source => {
+        try {
+          source.disconnect()
+        } catch (e) {
+          // Source might already be disconnected
         }
-        audioSource.toDestination()
-        this.connectedSources.add(audioSource)
-      } catch (e) {
-        console.error('Failed to connect audio source:', e)
+      })
+      this.connectedSources.clear()
+      this.lastAudioSource = null
+      
+      // Connect new source if available
+      if (audioSource && audioSource instanceof Tone.ToneAudioNode) {
+        try {
+          // Only connect if audio context is running
+          if (Tone.getContext().state === 'running') {
+            audioSource.toDestination()
+            this.connectedSources.add(audioSource)
+            this.lastAudioSource = audioSource
+          }
+        } catch (e) {
+          console.error('Failed to connect audio source:', e)
+        }
       }
+    }
+    
+    // Update volume on connected source
+    if (this.lastAudioSource && 'volume' in this.lastAudioSource && this.lastAudioSource.volume) {
+      (this.lastAudioSource as any).volume.value = volume
     }
   }
 
@@ -87,5 +116,6 @@ export class AudioOutputNode extends BaseNode {
       }
     })
     this.connectedSources.clear()
+    this.lastAudioSource = null
   }
 }

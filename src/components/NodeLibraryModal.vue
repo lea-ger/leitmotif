@@ -97,7 +97,7 @@ function onDragStart(event: DragEvent, nodeType: string) {
   if (event.dataTransfer) {
     event.dataTransfer.effectAllowed = 'copy'
     event.dataTransfer.setData('application/vueflow-nodetype', nodeType)
-    close()
+    setTimeout(() => close(), 1)
   }
 }
 
