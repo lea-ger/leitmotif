@@ -28,6 +28,21 @@
         <Icon v-if="isPlaying" icon="ph:pause-bold"/>
         <Icon v-else icon="ph:play-bold"/>
       </button>
+      
+      <!-- Audio Enable Button -->
+      <button
+          v-if="!audioEnabled"
+          @click="enableAudio"
+          class="btn btn-sm btn-warning gap-2"
+          title="Click to enable audio"
+      >
+        <Icon icon="ph:speaker-slash"/>
+        <span>Enable Audio</span>
+      </button>
+      <div v-else class="badge badge-success gap-2">
+        <Icon icon="ph:speaker-high"/>
+        <span>Audio Ready</span>
+      </div>
 
       <button
           @click="clearGraph"
@@ -139,7 +154,7 @@
 </template>
 
 <script setup lang="ts">
-import {ref, onMounted, onBeforeUnmount, watch, computed, type WritableComputedRef} from 'vue'
+import {ref, onMounted, onBeforeUnmount, watch, computed} from 'vue'
 import {VueFlow, useVueFlow, type NodeRemoveChange} from '@vue-flow/core'
 import type {Connection as FlowConnection, NodeChange, EdgeChange} from '@vue-flow/core'
 import {useGraphStore} from '../stores/graphStore'
@@ -180,6 +195,7 @@ const executor = new GraphExecutor(60)
 const isPlaying = ref(false)
 const currentFPS = ref(0)
 const isPeerPanelOpen = ref(true)
+const audioEnabled = ref(false)
 const qrModalRef = ref<InstanceType<typeof QRCodeModal> | null>(null)
 const nodeLibraryModalRef = ref<InstanceType<typeof NodeLibraryModal> | null>(null)
 const confirmDeleteChange = ref<NodeRemoveChange | null>(null)
@@ -191,6 +207,9 @@ const {project, applyNodeChanges} = useVueFlow()
 onMounted(() => {
   // Start FPS counter
   startFPSCounter()
+  
+  // Load saved graph from localStorage
+  graphStore.loadFromLocalStorage()
 })
 
 onBeforeUnmount(() => {
@@ -198,20 +217,40 @@ onBeforeUnmount(() => {
   if (fpsInterval) {
     clearInterval(fpsInterval)
   }
+  // Save graph before unmounting
+  graphStore.saveToLocalStorage()
 })
 
 // Watch graph changes and update executor
 watch([() => graphStore.nodeInstances, () => graphStore.allConnections], () => {
   const nodes = Array.from(graphStore.nodeInstances.values()) as BaseNode[]
   executor.setGraph(nodes, graphStore.allConnections)
+  
+  // Auto-save to localStorage on changes
+  graphStore.saveToLocalStorage()
 }, {deep: true})
 
-function toggleExecution() {
+async function enableAudio() {
+  try {
+    const Tone = await import('tone')
+    await Tone.start()
+    audioEnabled.value = true
+    console.log('Audio context enabled')
+  } catch (error) {
+    console.error('Failed to enable audio:', error)
+  }
+}
+
+async function toggleExecution() {
   if (isPlaying.value) {
     executor.stop()
     isPlaying.value = false
   } else {
-    executor.start()
+    // Ensure audio is enabled before starting
+    if (!audioEnabled.value) {
+      await enableAudio()
+    }
+    await executor.start()
     isPlaying.value = true
   }
 }

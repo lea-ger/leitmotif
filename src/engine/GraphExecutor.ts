@@ -108,17 +108,6 @@ export class GraphExecutor {
   async start(): Promise<void> {
     if (this.isRunning) return
     
-    // Start Tone.js audio context if not already started
-    try {
-      const Tone = await import('tone')
-      if (Tone.getContext().state !== 'running') {
-        await Tone.start()
-        console.log('Audio context started')
-      }
-    } catch (error) {
-      console.warn('Failed to start audio context:', error)
-    }
-    
     this.isRunning = true
     const frameInterval = 1000 / this.targetFPS
     let lastFrameTime = performance.now()

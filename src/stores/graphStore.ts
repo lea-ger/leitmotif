@@ -169,6 +169,122 @@ export const useGraphStore = defineStore('graph', () => {
     connections.value.clear()
     flowNodes.value = []
     flowEdges.value = []
+    saveToLocalStorage()
+  }
+
+  /**
+   * Save graph to localStorage
+   */
+  function saveToLocalStorage(): void {
+    try {
+      const graphData = {
+        nodes: Array.from(nodeInstances.value.entries()).map(([, node]) => {
+          // Get parameters if available
+          const params: Record<string, any> = {}
+          if ((node as any).parameters instanceof Map) {
+            ;(node as any).parameters.forEach((value: any, key: string) => {
+              params[key] = value
+            })
+          }
+          
+          return {
+            id: node.id,
+            type: node.type,
+            position: node.position,
+            enabled: node.enabled,
+            parameters: params
+          }
+        }),
+        connections: Array.from(connections.value.values())
+      }
+      
+      localStorage.setItem('leitmotif-graph', JSON.stringify(graphData))
+    } catch (error) {
+      console.error('Failed to save graph to localStorage:', error)
+    }
+  }
+
+  /**
+   * Load graph from localStorage
+   */
+  function loadFromLocalStorage(): void {
+    try {
+      const saved = localStorage.getItem('leitmotif-graph')
+      if (!saved) return
+
+      const graphData = JSON.parse(saved)
+      
+      // Clear existing graph
+      nodeInstances.value.forEach(node => node.cleanup())
+      nodeInstances.value.clear()
+      connections.value.clear()
+      flowNodes.value = []
+      flowEdges.value = []
+
+      // Recreate nodes
+      graphData.nodes.forEach((nodeData: any) => {
+        const node = NodeRegistry.create(nodeData.type)
+        if (!node) return
+
+        // Restore properties (note: id is readonly, we use the generated one)
+        node.position = nodeData.position
+        node.enabled = nodeData.enabled
+        
+        // Restore parameters
+        if (nodeData.parameters) {
+          Object.keys(nodeData.parameters).forEach(key => {
+            node.setParameter(key, nodeData.parameters[key])
+          })
+        }
+
+        nodeInstances.value.set(node.id, node)
+
+        // Create Vue Flow node
+        const metadata = NodeRegistry.getMetadata(nodeData.type)
+        flowNodes.value.push({
+          id: node.id,
+          type: 'custom',
+          position: nodeData.position,
+          data: {
+            node,
+            metadata
+          },
+          label: metadata?.displayName || nodeData.type
+        })
+      })
+
+      // Recreate connections
+      graphData.connections.forEach((conn: Connection) => {
+        const sourceNode = nodeInstances.value.get(conn.sourceNodeId)
+        const targetNode = nodeInstances.value.get(conn.targetNodeId)
+
+        if (!sourceNode || !targetNode) return
+
+        const sourcePort = sourceNode.getPort(conn.sourcePortId)
+        const targetPort = targetNode.getPort(conn.targetPortId)
+
+        if (!sourcePort || !targetPort) return
+
+        // Restore connection
+        connections.value.set(conn.id, conn)
+        sourcePort.connected = true
+        targetPort.connected = true
+
+        // Add to Vue Flow
+        flowEdges.value.push({
+          id: conn.id,
+          source: sourceNode.id,
+          target: targetNode.id,
+          sourceHandle: sourcePort.id,
+          targetHandle: targetPort.id,
+          animated: true
+        })
+      })
+
+      console.log('Graph loaded from localStorage')
+    } catch (error) {
+      console.error('Failed to load graph from localStorage:', error)
+    }
   }
 
   /**
@@ -197,6 +313,8 @@ export const useGraphStore = defineStore('graph', () => {
     addConnection,
     removeConnection,
     updateNodePosition,
-    clear
+    clear,
+    saveToLocalStorage,
+    loadFromLocalStorage
   }
 })

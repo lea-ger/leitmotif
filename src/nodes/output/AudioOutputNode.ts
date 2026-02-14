@@ -1,5 +1,5 @@
-import { BaseNode } from '../BaseNode'
-import { DataType, NodeCategory, type NodeMetadata } from '../types'
+import {BaseNode} from '../BaseNode'
+import {DataType, NodeCategory, type NodeMetadata} from '../types'
 import * as Tone from 'tone'
 
 /**
@@ -7,8 +7,8 @@ import * as Tone from 'tone'
  * Connects audio sources to speakers
  */
 export class AudioOutputNode extends BaseNode {
-  private connectedSources: Set<Tone.ToneAudioNode> = new Set()
-  private lastAudioSource: Tone.ToneAudioNode | null = null
+  private currentSource: Tone.ToneAudioNode | null = null
+  private isConnected: boolean = false
   
   constructor(id?: string) {
     super('audio-output', id)
@@ -53,69 +53,89 @@ export class AudioOutputNode extends BaseNode {
     const volume = this.getParameter('volume')
     const muted = this.getParameter('muted')
     
-    // If muted, disconnect everything
-    if (muted) {
-      if (this.connectedSources.size > 0) {
-        this.connectedSources.forEach(source => {
-          try {
-            source.disconnect()
-          } catch (e) {
-            // Source might already be disconnected
-          }
-        })
-        this.connectedSources.clear()
-        this.lastAudioSource = null
-      }
-      return
-    }
-    
-    // Check if audio source has changed
-    const isSameSource = audioSource === this.lastAudioSource
-    
-    // Only reconnect if source changed
-    if (!isSameSource) {
-      // Disconnect all previous sources
-      this.connectedSources.forEach(source => {
+    // Handle source changes
+    if (audioSource !== this.currentSource) {
+      // Disconnect old source if exists
+      if (this.currentSource && this.isConnected) {
         try {
-          source.disconnect()
+          this.currentSource.disconnect()
+          this.isConnected = false
         } catch (e) {
-          // Source might already be disconnected
+          // Already disconnected
         }
-      })
-      this.connectedSources.clear()
-      this.lastAudioSource = null
+      }
       
-      // Connect new source if available
-      if (audioSource && audioSource instanceof Tone.ToneAudioNode) {
-        try {
-          // Only connect if audio context is running
-          if (Tone.getContext().state === 'running') {
-            audioSource.toDestination()
-            this.connectedSources.add(audioSource)
-            this.lastAudioSource = audioSource
+      this.currentSource = null
+      this.isConnected = false
+      
+      // Connect new source if valid
+      if (audioSource && audioSource instanceof Tone.ToneAudioNode && !muted) {
+        const context = Tone.getContext()
+        if (context.state === 'running') {
+          try {
+            // Check if node is disposed
+            if ((audioSource as any).disposed === true) {
+              console.warn('Audio source is disposed, skipping connection')
+              return
+            }
+            
+            audioSource.connect(context.destination)
+            this.currentSource = audioSource
+            this.isConnected = true
+          } catch (e) {
+            console.error('Failed to connect audio source:', e)
           }
-        } catch (e) {
-          console.error('Failed to connect audio source:', e)
         }
       }
     }
     
-    // Update volume on connected source
-    if (this.lastAudioSource && 'volume' in this.lastAudioSource && this.lastAudioSource.volume) {
-      (this.lastAudioSource as any).volume.value = volume
+    // Handle mute changes
+    if (muted && this.isConnected) {
+      if (this.currentSource) {
+        try {
+          this.currentSource.disconnect()
+          this.isConnected = false
+        } catch (e) {
+          // Already disconnected
+        }
+      }
+    } else if (!muted && !this.isConnected && this.currentSource) {
+      // Reconnect if unmuted
+      const context = Tone.getContext()
+      if (context.state === 'running') {
+        try {
+          if ((this.currentSource as any).disposed !== true) {
+            this.currentSource.connect(context.destination)
+            this.isConnected = true
+          }
+        } catch (e) {
+          console.error('Failed to reconnect audio source:', e)
+        }
+      }
+    }
+    
+    // Update volume on current source
+    if (this.currentSource && 'volume' in this.currentSource) {
+      try {
+        const volumeNode = (this.currentSource as any).volume
+        if (volumeNode && typeof volumeNode.value !== 'undefined') {
+          volumeNode.value = volume
+        }
+      } catch (e) {
+        // Volume update failed
+      }
     }
   }
 
   cleanup(): void {
-    // Disconnect all sources
-    this.connectedSources.forEach(source => {
+    if (this.currentSource && this.isConnected) {
       try {
-        source.disconnect()
+        this.currentSource.disconnect()
       } catch (e) {
         // Ignore
       }
-    })
-    this.connectedSources.clear()
-    this.lastAudioSource = null
+    }
+    this.currentSource = null
+    this.isConnected = false
   }
 }

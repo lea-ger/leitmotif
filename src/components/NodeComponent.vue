@@ -62,7 +62,6 @@ const metadata = computed(() => props.data.metadata)
 
 const inputPorts = computed(() => node.value.getInputPorts())
 const outputPorts = computed(() => node.value.getOutputPorts())
-const hasParameters = computed(() => node.value.toJSON().parameters && Object.keys(node.value.toJSON().parameters).length > 0)
 
 const nodeColor = computed(() => metadata.value?.color || '#6b7280')
 

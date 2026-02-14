@@ -1,6 +1,7 @@
 import { BaseNode } from '../BaseNode'
 import { DataType, NodeCategory, type NodeMetadata } from '../types'
 import * as Tone from 'tone'
+import { markRaw } from 'vue'
 
 /**
  * Tone.js Synthesizer Node
@@ -8,8 +9,7 @@ import * as Tone from 'tone'
  */
 export class ToneSynthNode extends BaseNode {
   private synth: Tone.Synth | null = null
-  private lastTriggerTime: number = 0
-  private minTriggerInterval: number = 50 // ms
+  private isPlaying: boolean = false
   
   constructor(id?: string) {
     super('tone-synth', id)
@@ -20,7 +20,7 @@ export class ToneSynthNode extends BaseNode {
       type: 'tone-synth',
       category: NodeCategory.PROCESSOR,
       displayName: 'Tone Synth',
-      description: 'Generates audio from numeric input using Tone.js',
+      description: 'Generates continuous audio tone from frequency input',
       color: '#10b981',
       icon: '🎵'
     }
@@ -29,13 +29,23 @@ export class ToneSynthNode extends BaseNode {
   initialize(): void {
     // Inputs
     this.addInput('frequency', DataType.NUMERIC)
-    this.addInput('trigger', DataType.NUMERIC) // Trigger note when value changes significantly
-    this.addInput('volume', DataType.NUMERIC) // -60 to 0 dB
+    this.addInput('gate', DataType.NUMERIC) // Gate on/off (> 0.5 = on)
     
     // Output
     this.addOutput('audio', DataType.AUDIO)
     
     // Parameters
+    this.addParameter({
+      id: 'mode',
+      name: 'Mode',
+      type: 'select',
+      defaultValue: 'continuous',
+      options: [
+        { label: 'Continuous', value: 'continuous' },
+        { label: 'Triggered', value: 'triggered' }
+      ]
+    })
+    
     this.addParameter({
       id: 'oscillator',
       name: 'Oscillator Type',
@@ -47,6 +57,26 @@ export class ToneSynthNode extends BaseNode {
         { label: 'Sawtooth', value: 'sawtooth' },
         { label: 'Triangle', value: 'triangle' }
       ]
+    })
+    
+    this.addParameter({
+      id: 'defaultFrequency',
+      name: 'Default Frequency',
+      type: 'number',
+      defaultValue: 440,
+      min: 20,
+      max: 20000,
+      step: 1
+    })
+    
+    this.addParameter({
+      id: 'volume',
+      name: 'Volume',
+      type: 'number',
+      defaultValue: -12,
+      min: -60,
+      max: 0,
+      step: 1
     })
     
     this.addParameter({
@@ -99,45 +129,68 @@ export class ToneSynthNode extends BaseNode {
     const decay = this.getParameter('decay')
     const sustain = this.getParameter('sustain')
     const release = this.getParameter('release')
+    const volume = this.getParameter('volume')
     
-    this.synth = new Tone.Synth({
+    // Mark as raw to prevent Vue reactivity wrapping
+    this.synth = markRaw(new Tone.Synth({
       oscillator: { type: oscType },
-      envelope: { attack, decay, sustain, release }
-    })
-    
-    // Don't connect to destination yet - will be handled by AudioOutputNode
+      envelope: { attack, decay, sustain, release },
+      volume: volume
+    }))
   }
 
   process(): void {
     if (!this.synth) return
     
-    const frequency = this.getInputValue('frequency')
-    const trigger = this.getInputValue('trigger')
-    const volume = this.getInputValue('volume')
+    const mode = this.getParameter('mode')
+    const frequency = this.getInputValue('frequency') ?? this.getParameter('defaultFrequency')
+    const gate = this.getInputValue('gate')
+    const volume = this.getParameter('volume')
     
-    // Update volume if provided
-    if (volume !== undefined) {
-      this.synth.volume.value = Math.max(-60, Math.min(0, volume))
-    }
+    // Update volume
+    this.synth.volume.value = volume
     
-    // Trigger note if trigger value is high enough and enough time has passed
-    const now = Date.now()
-    if (frequency !== undefined && trigger !== undefined && trigger > 0.5) {
-      if (now - this.lastTriggerTime > this.minTriggerInterval) {
+    if (mode === 'continuous') {
+      // Continuous mode - plays as long as gate is high or no gate input
+      const shouldPlay = gate === undefined || gate > 0.5
+      
+      if (shouldPlay && !this.isPlaying) {
+        // Start playing
         const freq = Math.max(20, Math.min(20000, frequency))
-        this.synth.triggerAttackRelease(freq, '8n')
-        this.lastTriggerTime = now
+        this.synth.triggerAttack(freq)
+        this.isPlaying = true
+      } else if (!shouldPlay && this.isPlaying) {
+        // Stop playing
+        this.synth.triggerRelease()
+        this.isPlaying = false
+      } else if (shouldPlay && this.isPlaying) {
+        // Update frequency while playing
+        const freq = Math.max(20, Math.min(20000, frequency))
+        this.synth.frequency.setValueAtTime(freq, Tone.now())
+      }
+    } else {
+      // Triggered mode - one-shot notes
+      if (gate !== undefined && gate > 0.5 && !this.isPlaying) {
+        const freq = Math.max(20, Math.min(20000, frequency))
+        this.synth.triggerAttackRelease(freq, '4n')
+        this.isPlaying = true
+        // Reset playing state after a short delay
+        setTimeout(() => { this.isPlaying = false }, 100)
       }
     }
     
-    // Output the synth instance (AudioOutputNode will connect it)
+    // Output the synth instance (marked as raw, won't be proxied)
     this.setOutputValue('audio', this.synth)
   }
 
   cleanup(): void {
     if (this.synth) {
+      if (this.isPlaying) {
+        this.synth.triggerRelease()
+      }
       this.synth.dispose()
       this.synth = null
     }
+    this.isPlaying = false
   }
 }

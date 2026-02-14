@@ -146,7 +146,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { computed } from 'vue'
 import { usePeerStore } from '../stores/peerStore'
 import type { CapabilityType } from '../stores/types/peer'
 import { Icon } from "@iconify/vue";
