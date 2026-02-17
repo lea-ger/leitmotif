@@ -1,52 +1,54 @@
 <template>
-  <div class="custom-node" :style="{ borderColor: nodeColor }">
+  <div class="custom-node flex flex-col" :style="{ borderColor: nodeColor }">
     <div class="node-header">
       <Icon :icon="metadata?.icon || ''" class="node-icon"></Icon>
       <span class="node-title">{{ node.name }}</span>
     </div>
-    
-    <!-- Input Ports -->
-    <div v-if="inputPorts.length > 0" class="ports inputs">
-      <div 
-        v-for="port in inputPorts" 
-        :key="port.id"
-        class="port"
-      >
-        <Handle
-          :id="port.id"
-          type="target"
-          :position="Position.Left"
-          :style="{ background: getPortColor(port.dataType) }"
-        />
-        <span class="port-label">{{ port.name }}</span>
+
+    <div class="flex">
+      <!-- Input Ports -->
+      <div v-if="inputPorts.length > 0" class="ports flex-1 inputs">
+        <div
+            v-for="port in inputPorts"
+            :key="port.id"
+            class="port"
+        >
+          <Handle
+              :id="port.id"
+              type="target"
+              :position="Position.Left"
+              :style="{ background: getPortColor(port.dataType) }"
+          />
+          <span class="port-label">{{ port.name }}</span>
+        </div>
       </div>
-    </div>
-    
-    <!-- Output Ports -->
-    <div v-if="outputPorts.length > 0" class="ports outputs">
-      <div 
-        v-for="port in outputPorts" 
-        :key="port.id"
-        class="port"
-      >
-        <span class="port-label">{{ port.name }}</span>
-        <Handle
-          :id="port.id"
-          type="source"
-          :position="Position.Right"
-          :style="{ background: getPortColor(port.dataType) }"
-        />
+
+      <!-- Output Ports -->
+      <div v-if="outputPorts.length > 0" class="ports flex-1 outputs">
+        <div
+            v-for="port in outputPorts"
+            :key="port.id"
+            class="port"
+        >
+          <span class="port-label">{{ port.name }}</span>
+          <Handle
+              :id="port.id"
+              type="source"
+              :position="Position.Right"
+              :style="{ background: getPortColor(port.dataType) }"
+          />
+        </div>
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
-import { Handle, Position } from '@vue-flow/core'
-import { BaseNode } from '../nodes/BaseNode'
-import { type NodeMetadata, DataType, DATA_TYPE_COLORS } from '../nodes/types'
-import { Icon } from "@iconify/vue";
+import {computed} from 'vue'
+import {Handle, Position} from '@vue-flow/core'
+import {BaseNode} from '../nodes/BaseNode'
+import {DATA_TYPE_COLORS, DataType, type NodeMetadata} from '../nodes/types'
+import {Icon} from "@iconify/vue";
 
 interface Props {
   data: {
