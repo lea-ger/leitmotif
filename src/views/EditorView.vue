@@ -222,6 +222,9 @@ onMounted(() => {
   // Start FPS counter
   startFPSCounter()
   
+  // Load saved peers from localStorage
+  peerStore.loadFromLocalStorage()
+  
   // Load saved graph from localStorage
   graphStore.loadFromLocalStorage()
 })
@@ -233,6 +236,8 @@ onBeforeUnmount(() => {
   }
   // Save graph before unmounting
   graphStore.saveToLocalStorage()
+  // Save peers before unmounting
+  peerStore.saveToLocalStorage()
 })
 
 // Watch graph changes and update executor

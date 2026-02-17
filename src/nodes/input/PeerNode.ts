@@ -60,6 +60,13 @@ export class PeerNode extends BaseNode {
   }
 
   /**
+   * Get enabled capabilities (for serialization)
+   */
+  getEnabledCapabilities(): CapabilityType[] {
+    return Array.from(this.enabledCapabilities)
+  }
+
+  /**
    * Enable a specific capability
    */
   enableCapability(capabilityType: CapabilityType): void {
@@ -94,13 +101,12 @@ export class PeerNode extends BaseNode {
     const peer = this.peerStore.getPeer(this.peerId)
     if (!peer) return
 
-    // Clear existing ports
-    this.inputs.clear()
+    // Clear existing outputs only (keep inputs if any)
     this.outputs.clear()
 
     // Create output ports for each enabled capability
     for (const capability of peer.capabilities) {
-      if (capability.enabled && this.enabledCapabilities.has(capability.type)) {
+      if (this.enabledCapabilities.has(capability.type)) {
         this.addCapabilityPorts(capability)
       }
     }

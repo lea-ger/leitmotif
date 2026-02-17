@@ -36,6 +36,7 @@ export const usePeerStore = defineStore('peer', () => {
     if (!dataStreams.value.has(peer.id)) {
       dataStreams.value.set(peer.id, new Map())
     }
+    saveToLocalStorage()
   }
 
   /**
@@ -44,6 +45,7 @@ export const usePeerStore = defineStore('peer', () => {
   const removePeer = (peerId: string) => {
     peers.value.delete(peerId)
     dataStreams.value.delete(peerId)
+    saveToLocalStorage()
   }
 
   /**
@@ -143,6 +145,62 @@ export const usePeerStore = defineStore('peer', () => {
   const clearAll = () => {
     peers.value.clear()
     dataStreams.value.clear()
+    saveToLocalStorage()
+  }
+
+  /**
+   * Save peers to localStorage
+   */
+  const saveToLocalStorage = () => {
+    try {
+      const peersData = Array.from(peers.value.values()).map(peer => ({
+        id: peer.id,
+        name: peer.name,
+        connected: false, // Always save as disconnected, will reconnect if available
+        lastSeen: peer.lastSeen.toISOString(),
+        isMock: peer.isMock || false,
+        capabilities: peer.capabilities
+      }))
+      
+      localStorage.setItem('leitmotif-peers', JSON.stringify(peersData))
+    } catch (error) {
+      console.error('Failed to save peers to localStorage:', error)
+    }
+  }
+
+  /**
+   * Load peers from localStorage
+   */
+  const loadFromLocalStorage = () => {
+    try {
+      const saved = localStorage.getItem('leitmotif-peers')
+      if (!saved) return
+
+      const peersData = JSON.parse(saved)
+      
+      peersData.forEach((peerData: any) => {
+        const peer: PeerMetadata = {
+          id: peerData.id,
+          name: peerData.name,
+          connected: false, // Start as disconnected
+          lastSeen: new Date(peerData.lastSeen),
+          isMock: peerData.isMock || false,
+          capabilities: peerData.capabilities
+        }
+        
+        addPeer(peer)
+        
+        // Auto-restart mock peers
+        if (peer.isMock) {
+          peer.connected = true
+          startMockDataGeneration(peer.id)
+        }
+      })
+      
+      console.log(`Loaded ${peersData.length} peer(s) from localStorage`)
+    } catch (error) {
+      console.error('Failed to load peers from localStorage:', error)
+    }
   }
 
   /**
@@ -247,6 +305,8 @@ export const usePeerStore = defineStore('peer', () => {
     getAllPeerData,
     clearAll,
     addMockPeer,
-    removeMockPeer
+    removeMockPeer,
+    saveToLocalStorage,
+    loadFromLocalStorage
   }
 })

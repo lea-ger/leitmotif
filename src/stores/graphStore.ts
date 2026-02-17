@@ -226,13 +226,23 @@ export const useGraphStore = defineStore('graph', () => {
             })
           }
           
+          // Get peer node specific data
+          let peerConfig: any = undefined
+          if (node.type === 'peer' && typeof (node as any).getPeerId === 'function') {
+            peerConfig = {
+              peerId: (node as any).getPeerId(),
+              enabledCapabilities: (node as any).getEnabledCapabilities?.() || []
+            }
+          }
+          
           return {
             id: node.id,
             type: node.type,
             position: node.position,
             enabled: node.enabled,
             parameters: params,
-            exposedParameters: exposedParams
+            exposedParameters: exposedParams,
+            peerConfig
           }
         }),
         connections: Array.from(connections.value.values())
@@ -282,6 +292,17 @@ export const useGraphStore = defineStore('graph', () => {
           nodeData.exposedParameters.forEach((paramId: string) => {
             node.exposeParameterAsInput(paramId)
           })
+        }
+
+        // Restore peer node configuration
+        if (nodeData.peerConfig && node.type === 'peer') {
+          const peerNode = node as any
+          if (nodeData.peerConfig.peerId && typeof peerNode.setPeer === 'function') {
+            peerNode.setPeer(nodeData.peerConfig.peerId)
+          }
+          if (nodeData.peerConfig.enabledCapabilities && typeof peerNode.configureCapabilities === 'function') {
+            peerNode.configureCapabilities(nodeData.peerConfig.enabledCapabilities)
+          }
         }
 
         nodeInstances.value.set(node.id, node)
