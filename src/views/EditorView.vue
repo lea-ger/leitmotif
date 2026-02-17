@@ -110,6 +110,7 @@
               @connect="onConnect"
               @nodes-change="onNodesChange"
               @edges-change="onEdgesChange"
+              @node-click="onNodeClick"
               :connection-line-style="{ stroke: '#6366f1', strokeWidth: 2 }"
               :default-zoom="0.8"
               :min-zoom="0.1"
@@ -131,6 +132,13 @@
         </div>
       </div>
     </div>
+
+    <!-- Node Settings Panel -->
+    <NodeSettingsPanel 
+      :selected-node="graphStore.selectedNode"
+      :metadata="selectedNodeMetadata"
+      @close="graphStore.selectNode(null)"
+    />
 
     <!-- QR Code Modal -->
     <QRCodeModal ref="qrModalRef"/>
@@ -171,6 +179,8 @@ import '@vue-flow/core/dist/style.css'
 import '@vue-flow/core/dist/theme-default.css'
 import {Icon} from "@iconify/vue";
 import NodeLibraryModal from "../components/NodeLibraryModal.vue";
+import NodeSettingsPanel from "../components/NodeSettingsPanel.vue";
+import { NodeRegistry } from '../nodes/NodeRegistry';
 
 // Register all node types
 registerAllNodes()
@@ -199,6 +209,10 @@ const audioEnabled = ref(false)
 const qrModalRef = ref<InstanceType<typeof QRCodeModal> | null>(null)
 const nodeLibraryModalRef = ref<InstanceType<typeof NodeLibraryModal> | null>(null)
 const confirmDeleteChange = ref<NodeRemoveChange | null>(null)
+const selectedNodeMetadata = computed(() => {
+  if (!graphStore.selectedNode) return undefined
+  return NodeRegistry.getMetadata(graphStore.selectedNode.type)
+})
 let fpsInterval: number | null = null
 
 // Vue Flow instance
@@ -322,6 +336,11 @@ function onNodesChange(changes: NodeChange[]) {
   }
 
   applyNodeChanges(nextChanges)
+}
+
+function onNodeClick(event: any) {
+  // Select the clicked node
+  graphStore.selectNode(event.node.id)
 }
 
 function deleteNodeConfirmed() {

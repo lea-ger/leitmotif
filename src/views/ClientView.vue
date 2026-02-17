@@ -61,13 +61,12 @@ function startSensors() {
   ;(startSensors as any)._onMotion = onMotion
   ;(startSensors as any)._onOrient = onOrient
 
-  // send at 20Hz
   if (sendTimer) window.clearInterval(sendTimer)
   sendTimer = window.setInterval(() => {
     if (conn && conn.open) {
       conn.send({ ax: ax.value, ay: ay.value, az: az.value, alpha: alpha.value, beta: beta.value, gamma: gamma.value })
     }
-  }, 50)
+  }, 20)
 }
 
 function stopSensors() {

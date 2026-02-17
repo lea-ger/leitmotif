@@ -7,5 +7,8 @@ export default defineConfig({
   plugins: [
     vue(),
     tailwindcss(),
-  ]
+  ],
+  server: {
+    allowedHosts: ['localhost', 'exploratively-older-tressa.ngrok-free.dev'],
+  }
 })

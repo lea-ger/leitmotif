@@ -21,6 +21,9 @@ export const useGraphStore = defineStore('graph', () => {
   // Internal connections map
   const connections = ref<Map<string, Connection>>(new Map())
 
+  // Selected node
+  const selectedNodeId = ref<string | null>(null)
+
   /**
    * Add a new node to the graph
    */
@@ -157,6 +160,32 @@ export const useGraphStore = defineStore('graph', () => {
     const flowNode = flowNodes.value.find(n => n.id === nodeId)
     if (flowNode) {
       flowNode.position = position
+    }
+  }
+
+  /**
+   * Select a node
+   */
+  function selectNode(nodeId: string | null): void {
+    selectedNodeId.value = nodeId
+  }
+
+  /**
+   * Get selected node instance
+   */
+  const selectedNode = computed(() => {
+    if (!selectedNodeId.value) return null
+    return nodeInstances.value.get(selectedNodeId.value) || null
+  })
+
+  /**
+   * Update node ports (force Vue Flow to re-render)
+   */
+  function updateNodePorts(nodeId: string): void {
+    const flowNode = flowNodes.value.find(n => n.id === nodeId)
+    if (flowNode) {
+      // Trigger reactivity by creating new array
+      flowNodes.value = [...flowNodes.value]
     }
   }
 
@@ -306,6 +335,8 @@ export const useGraphStore = defineStore('graph', () => {
     flowEdges,
     nodes,
     allConnections,
+    selectedNodeId,
+    selectedNode,
 
     // Actions
     addNode,
@@ -313,6 +344,8 @@ export const useGraphStore = defineStore('graph', () => {
     addConnection,
     removeConnection,
     updateNodePosition,
+    selectNode,
+    updateNodePorts,
     clear,
     saveToLocalStorage,
     loadFromLocalStorage

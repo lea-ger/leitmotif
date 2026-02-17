@@ -20,6 +20,7 @@ export abstract class BaseNode {
   protected inputs: Map<string, Port> = new Map()
   protected outputs: Map<string, Port> = new Map()
   protected parameters: Map<string, any> = new Map()
+  protected parameterDefinitions: Map<string, NodeParameter> = new Map()
   
   enabled: boolean = true
   
@@ -90,13 +91,29 @@ export abstract class BaseNode {
    * Add parameter
    */
   protected addParameter(param: NodeParameter): void {
+    this.parameterDefinitions.set(param.id, param)
     this.parameters.set(param.id, param.defaultValue)
+    
+    // If parameter is exposed as input, create input port
+    if (param.exposedAsInput) {
+      this.exposeParameterAsInput(param.id)
+    }
   }
 
   /**
-   * Get parameter value
+   * Get parameter value (checks input port first if exposed)
    */
   protected getParameter(id: string): any {
+    const paramDef = this.parameterDefinitions.get(id)
+    if (paramDef?.exposedAsInput) {
+      // Check if there's an input port for this parameter
+      const inputPortName = `param_${id}`
+      const inputValue = this.getInputValue(inputPortName)
+      // Use input value if connected, otherwise use parameter value
+      if (inputValue !== undefined) {
+        return inputValue
+      }
+    }
     return this.parameters.get(id)
   }
 
@@ -161,6 +178,71 @@ export abstract class BaseNode {
   }
 
   /**
+   * Get all parameter definitions
+   */
+  getParameterDefinitions(): NodeParameter[] {
+    return Array.from(this.parameterDefinitions.values())
+  }
+
+  /**
+   * Get parameter definition by ID
+   */
+  getParameterDefinition(id: string): NodeParameter | undefined {
+    return this.parameterDefinitions.get(id)
+  }
+
+  /**
+   * Expose parameter as input port
+   */
+  exposeParameterAsInput(parameterId: string): void {
+    const paramDef = this.parameterDefinitions.get(parameterId)
+    if (!paramDef) return
+    
+    paramDef.exposedAsInput = true
+    
+    // Create input port for this parameter
+    const portName = `param_${parameterId}`
+    const dataType = paramDef.dataType || DataType.NUMERIC
+    
+    // Check if port already exists
+    const existingPort = Array.from(this.inputs.values()).find(p => p.name === portName)
+    if (!existingPort) {
+      this.addInput(portName, dataType)
+    }
+  }
+
+  /**
+   * Hide parameter input port
+   */
+  hideParameterInput(parameterId: string): void {
+    const paramDef = this.parameterDefinitions.get(parameterId)
+    if (!paramDef) return
+    
+    paramDef.exposedAsInput = false
+    
+    // Remove input port for this parameter
+    const portName = `param_${parameterId}`
+    const portToRemove = Array.from(this.inputs.entries()).find(([_, p]) => p.name === portName)
+    if (portToRemove) {
+      this.inputs.delete(portToRemove[0])
+    }
+  }
+
+  /**
+   * Toggle parameter exposure as input
+   */
+  toggleParameterExposure(parameterId: string): void {
+    const paramDef = this.parameterDefinitions.get(parameterId)
+    if (!paramDef) return
+    
+    if (paramDef.exposedAsInput) {
+      this.hideParameterInput(parameterId)
+    } else {
+      this.exposeParameterAsInput(parameterId)
+    }
+  }
+
+  /**
    * Serialize node to JSON
    */
   toJSON() {
@@ -171,6 +253,7 @@ export abstract class BaseNode {
       position: this.position,
       enabled: this.enabled,
       parameters: Object.fromEntries(this.parameters),
+      parameterDefinitions: Array.from(this.parameterDefinitions.values()),
       inputs: Array.from(this.inputs.values()),
       outputs: Array.from(this.outputs.values())
     }

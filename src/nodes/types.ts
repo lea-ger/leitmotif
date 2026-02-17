@@ -97,6 +97,8 @@ export interface NodeParameter {
   max?: number
   step?: number
   options?: { label: string; value: any }[]
+  exposedAsInput?: boolean  // Whether this parameter is exposed as an input port
+  dataType?: DataType       // Data type when exposed as input (defaults to NUMERIC)
 }
 
 /**
