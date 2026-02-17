@@ -2,11 +2,14 @@
   <div 
     v-if="selectedNode" 
     class="node-settings-panel bg-base-200 shadow-xl border-l border-base-content/10"
+    :style="{ '--node-color': nodeColor }"
   >
-    <div class="panel-header bg-base-300 p-4 border-b border-base-content/10">
+    <div class="panel-header p-4 border-b border-base-content/10">
       <div class="flex items-center justify-between">
         <div class="flex items-center gap-2">
-          <Icon :icon="metadata?.icon || 'ph:gear'" class="text-lg" />
+          <div class="icon-wrapper">
+            <Icon :icon="metadata?.icon || 'ph:gear'" class="text-xl" />
+          </div>
           <h3 class="font-semibold">{{ selectedNode.name }}</h3>
         </div>
         <button 
@@ -131,6 +134,8 @@ const parameters = computed(() => {
   return props.selectedNode.getParameterDefinitions()
 })
 
+const nodeColor = computed(() => props.metadata?.color || '#6b7280')
+
 function getParameterValue(parameterId: string): any {
   if (!props.selectedNode) return undefined
   // Get the raw parameter value (not from input)
@@ -168,10 +173,49 @@ function isParameterConnected(parameterId: string): boolean {
   z-index: 40;
   display: flex;
   flex-direction: column;
+  animation: slideIn 0.2s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
 }
 
 .panel-header {
   flex-shrink: 0;
+  background: color-mix(in srgb, var(--node-color) 15%, oklch(var(--b3)));
+  border-left: 4px solid var(--node-color);
+  position: relative;
+}
+
+.panel-header::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(
+    90deg,
+    var(--node-color),
+    transparent
+  );
+}
+
+.icon-wrapper {
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: color-mix(in srgb, var(--node-color) 20%, transparent);
+  color: var(--node-color);
+  border: 1px solid color-mix(in srgb, var(--node-color) 30%, transparent);
 }
 
 .panel-content {
@@ -183,11 +227,31 @@ function isParameterConnected(parameterId: string): boolean {
   background: oklch(var(--b1));
   border: 1px solid oklch(var(--bc) / 0.1);
   border-radius: 8px;
-  padding: .25rem;
+  padding: 12px;
+  transition: all 0.15s ease;
 }
 
 .parameter-item:hover {
   background: oklch(var(--b2));
+  border-color: color-mix(in srgb, var(--node-color) 30%, oklch(var(--bc) / 0.1));
+}
+
+.checkbox:checked {
+  background-color: var(--node-color);
+  border-color: var(--node-color);
+}
+
+.badge-primary {
+  background-color: color-mix(in srgb, var(--node-color) 80%, transparent);
+  color: var(--node-color);
+  border: 1px solid color-mix(in srgb, var(--node-color) 40%, transparent);
+}
+
+input[type="number"]:focus,
+input[type="text"]:focus,
+select:focus {
+  outline: 2px solid color-mix(in srgb, var(--node-color) 40%, transparent);
+  outline-offset: 2px;
 }
 
 input[type="number"]:disabled,
@@ -195,5 +259,9 @@ input[type="text"]:disabled,
 select:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+.text-success {
+  color: var(--node-color);
 }
 </style>

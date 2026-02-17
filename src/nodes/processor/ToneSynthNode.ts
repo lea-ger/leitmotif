@@ -22,7 +22,7 @@ export class ToneSynthNode extends BaseNode {
       displayName: 'Tone Synth',
       description: 'Generates continuous audio tone from frequency input',
       color: '#10b981',
-      icon: '🎵'
+      icon: 'ph:waveform'
     }
   }
 

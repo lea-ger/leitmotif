@@ -17,7 +17,7 @@ export class MathMapNode extends BaseNode {
       displayName: 'Map Range',
       description: 'Maps a number from one range to another',
       color: '#f59e0b',
-      icon: '🔢'
+      icon: 'ph:function'
     }
   }
 

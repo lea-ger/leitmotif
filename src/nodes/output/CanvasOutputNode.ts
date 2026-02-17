@@ -20,7 +20,7 @@ export class CanvasOutputNode extends BaseNode {
       displayName: 'Canvas Output',
       description: 'Renders visual output to canvas',
       color: '#8b5cf6',
-      icon: '🎨'
+      icon: 'ph:paint-brush'
     }
   }
 

@@ -29,7 +29,7 @@
                 :style="{ borderLeft: `4px solid ${node.metadata.color || '#666'}` }"
             >
               <div class="flex items-center gap-2">
-                <span class="text-xl">{{ node.metadata.icon || '📦' }}</span>
+                <Icon :icon="node.metadata.icon || 'ph:package'" class="text-xl" />
                 <div class="flex-1 min-w-0">
                   <div class="font-medium text-sm truncate">
                     {{ node.metadata.displayName }}
@@ -49,6 +49,7 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
+import { Icon } from '@iconify/vue'
 import { NodeRegistry } from '../nodes/NodeRegistry'
 import { NodeCategory } from '../nodes/types'
 

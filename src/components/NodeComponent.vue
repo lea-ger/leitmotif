@@ -1,41 +1,55 @@
 <template>
-  <div class="custom-node flex flex-col" :style="{ borderColor: nodeColor }">
-    <div class="node-header">
-      <Icon :icon="metadata?.icon || ''" class="node-icon"></Icon>
-      <span class="node-title">{{ node.name }}</span>
+  <div 
+    class="bg-base-100 border-2 rounded-lg min-w-[180px] shadow-md transition-all duration-200 flex flex-col"
+    :class="{ 
+      'shadow-[0_0_0_2px_var(--node-color),0_0_20px_rgba(0,0,0,0.3),0_0_40px_color-mix(in_srgb,var(--node-color)_40%,transparent)] border-[3px] scale-[1.02]': isSelected 
+    }"
+    :style="{ 
+      borderColor: nodeColor,
+      '--node-color': nodeColor 
+    }"
+  >
+    <div 
+      class="flex items-center gap-2 px-3 py-2 border-b border-base-content/10 bg-base-200 rounded-t-md"
+      :style="isSelected ? { background: `color-mix(in srgb, var(--node-color) 15%, oklch(var(--b2)))` } : {}"
+    >
+      <Icon :icon="metadata?.icon || ''" class="text-base" />
+      <span class="font-semibold text-[13px] flex-1 overflow-hidden text-ellipsis whitespace-nowrap">
+        {{ node.name }}
+      </span>
     </div>
 
     <div class="flex">
       <!-- Input Ports -->
-      <div v-if="inputPorts.length > 0" class="ports flex-1 inputs">
+      <div v-if="inputPorts.length > 0" class="py-2 px-1 flex-1">
         <div
-            v-for="port in inputPorts"
-            :key="port.id"
-            class="port"
+          v-for="port in inputPorts"
+          :key="port.id"
+          class="flex items-center gap-2 px-2 py-1 relative"
         >
           <Handle
-              :id="port.id"
-              type="target"
-              :position="Position.Left"
-              :style="{ background: getPortColor(port.dataType) }"
+            :id="port.id"
+            type="target"
+            :position="Position.Left"
+            :style="{ background: getPortColor(port.dataType) }"
           />
-          <span class="port-label">{{ port.name }}</span>
+          <span class="text-[11px] text-base-content/70">{{ port.name }}</span>
         </div>
       </div>
 
       <!-- Output Ports -->
-      <div v-if="outputPorts.length > 0" class="ports flex-1 outputs">
+      <div v-if="outputPorts.length > 0" class="py-2 px-1 flex-1">
         <div
-            v-for="port in outputPorts"
-            :key="port.id"
-            class="port"
+          v-for="port in outputPorts"
+          :key="port.id"
+          class="flex items-center gap-2 px-2 py-1 relative justify-end"
         >
-          <span class="port-label">{{ port.name }}</span>
+          <span class="text-[11px] text-base-content/70">{{ port.name }}</span>
           <Handle
-              :id="port.id"
-              type="source"
-              :position="Position.Right"
-              :style="{ background: getPortColor(port.dataType) }"
+            :id="port.id"
+            type="source"
+            :position="Position.Right"
+            :style="{ background: getPortColor(port.dataType) }"
           />
         </div>
       </div>
@@ -49,6 +63,7 @@ import {Handle, Position} from '@vue-flow/core'
 import {BaseNode} from '../nodes/BaseNode'
 import {DATA_TYPE_COLORS, DataType, type NodeMetadata} from '../nodes/types'
 import {Icon} from "@iconify/vue";
+import {useGraphStore} from '../stores/graphStore'
 
 interface Props {
   data: {
@@ -58,6 +73,7 @@ interface Props {
 }
 
 const props = defineProps<Props>()
+const graphStore = useGraphStore()
 
 const node = computed(() => props.data.node)
 const metadata = computed(() => props.data.metadata)
@@ -66,6 +82,7 @@ const inputPorts = computed(() => node.value.getInputPorts())
 const outputPorts = computed(() => node.value.getOutputPorts())
 
 const nodeColor = computed(() => metadata.value?.color || '#6b7280')
+const isSelected = computed(() => graphStore.selectedNodeId === node.value.id)
 
 function getPortColor(dataType: DataType): string {
   return DATA_TYPE_COLORS[dataType]
@@ -73,72 +90,16 @@ function getPortColor(dataType: DataType): string {
 </script>
 
 <style scoped>
-.custom-node {
-  background: oklch(var(--b1));
-  border: 2px solid;
-  border-radius: 8px;
-  min-width: 180px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-.node-header {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 12px;
-  border-bottom: 1px solid oklch(var(--bc) / 0.1);
-  background: oklch(var(--b2));
-  border-radius: 6px 6px 0 0;
-}
-
-.node-icon {
-  font-size: 16px;
-}
-
-.node-title {
-  font-weight: 600;
-  font-size: 13px;
-  flex: 1;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.ports {
-  padding: 8px 4px;
-}
-
-.port {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 4px 8px;
-  position: relative;
-}
-
-.inputs .port {
-  justify-content: flex-start;
-}
-
-.outputs .port {
-  justify-content: flex-end;
-}
-
-.port-label {
-  font-size: 11px;
-  color: oklch(var(--bc) / 0.7);
-}
-
-.node-parameters {
-  padding: 8px 12px;
-  border-top: 1px solid oklch(var(--bc) / 0.1);
-  background: oklch(var(--b2) / 0.5);
-}
-
+/* Only keep CSS that can't be done with Tailwind */
 :deep(.vue-flow__handle) {
   width: 12px;
   height: 12px;
   border: 2px solid oklch(var(--b1));
+  transition: all 0.15s ease;
+}
+
+:deep(.vue-flow__handle:hover) {
+  transform: scale(1.3);
 }
 
 :deep(.vue-flow__handle-left) {

@@ -28,21 +28,6 @@
         <Icon v-if="isPlaying" icon="ph:pause-bold"/>
         <Icon v-else icon="ph:play-bold"/>
       </button>
-      
-      <!-- Audio Enable Button -->
-      <button
-          v-if="!audioEnabled"
-          @click="enableAudio"
-          class="btn btn-sm btn-warning gap-2"
-          title="Click to enable audio"
-      >
-        <Icon icon="ph:speaker-slash"/>
-        <span>Enable Audio</span>
-      </button>
-      <div v-else class="badge badge-success gap-2">
-        <Icon icon="ph:speaker-high"/>
-        <span>Audio Ready</span>
-      </div>
 
       <button
           @click="clearGraph"

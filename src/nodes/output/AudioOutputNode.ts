@@ -21,7 +21,7 @@ export class AudioOutputNode extends BaseNode {
       displayName: 'Audio Output',
       description: 'Outputs audio to speakers',
       color: '#10b981',
-      icon: '🔊'
+      icon: 'ph:speaker-high'
     }
   }
 

@@ -23,7 +23,7 @@ export class AllPeersNode extends BaseNode {
       displayName: 'All Peers',
       description: 'Aggregates data from all connected peers',
       color: '#8b5cf6',
-      icon: '👥'
+      icon: 'ph:users-three'
     }
   }
 
