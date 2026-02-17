@@ -1,7 +1,7 @@
 <template>
   <div class="drawer" :class="{ 'drawer-open': isOpen }">
     <input id="peer-drawer" type="checkbox" class="drawer-toggle" />
-    <div class="drawer-side" v-show="isOpen">
+    <div class="drawer-side h-fit" v-show="isOpen">
       <label for="peer-drawer" aria-label="close sidebar" class="drawer-overlay" @click="isOpen = false"></label>
       <div class="menu bg-base-200 text-base-content min-h-full w-80 p-4">
         <!-- Header -->

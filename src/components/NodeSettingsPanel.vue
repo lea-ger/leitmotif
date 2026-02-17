@@ -21,7 +21,7 @@
 
     <div class="panel-content p-4 overflow-y-auto">
       <div v-if="parameters.length === 0" class="text-sm text-base-content/60 text-center py-8">
-        No parameters available8
+        No parameters available
       </div>
 
       <div v-for="param in parameters" :key="param.id" class="parameter-item">
@@ -30,7 +30,7 @@
             type="checkbox" 
             :checked="param.exposedAsInput"
             @change="toggleParameterExposure(param.id)"
-            class="checkbox checkbox-sm checkbox-primary mt-1"
+            class="checkbox checkbox-xs checkbox-primary mt-1"
             :title="param.exposedAsInput ? 'Hide input port' : 'Expose as input port'"
           />
           <div class="flex-1">
@@ -50,7 +50,7 @@
               :min="param.min"
               :max="param.max"
               :step="param.step"
-              class="input input-sm input-bordered w-full"
+              class="input input-xs input-bordered w-full"
               :disabled="param.exposedAsInput && isParameterConnected(param.id)"
             />
 
@@ -60,7 +60,7 @@
               type="text"
               :value="getParameterValue(param.id)"
               @input="updateParameter(param.id, ($event.target as HTMLInputElement).value)"
-              class="input input-sm input-bordered w-full"
+              class="input input-xs input-bordered w-full"
               :disabled="param.exposedAsInput && isParameterConnected(param.id)"
             />
 
@@ -70,7 +70,7 @@
               type="checkbox"
               :checked="getParameterValue(param.id)"
               @change="updateParameter(param.id, ($event.target as HTMLInputElement).checked)"
-              class="toggle toggle-sm toggle-primary"
+              class="toggle toggle-xs toggle-primary"
               :disabled="param.exposedAsInput && isParameterConnected(param.id)"
             />
 
@@ -79,7 +79,7 @@
               v-else-if="param.type === 'select'"
               :value="getParameterValue(param.id)"
               @change="updateParameter(param.id, ($event.target as HTMLSelectElement).value)"
-              class="select select-sm select-bordered w-full"
+              class="select select-xs select-bordered w-full"
               :disabled="param.exposedAsInput && isParameterConnected(param.id)"
             >
               <option 
@@ -165,7 +165,6 @@ function isParameterConnected(parameterId: string): boolean {
   top: 56px;
   right: 0;
   width: 320px;
-  height: calc(100vh - 56px);
   z-index: 40;
   display: flex;
   flex-direction: column;
@@ -184,7 +183,7 @@ function isParameterConnected(parameterId: string): boolean {
   background: oklch(var(--b1));
   border: 1px solid oklch(var(--bc) / 0.1);
   border-radius: 8px;
-  padding: 12px;
+  padding: .25rem;
 }
 
 .parameter-item:hover {
