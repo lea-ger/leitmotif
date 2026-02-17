@@ -157,6 +157,17 @@ export abstract class BaseNode {
   }
 
   /**
+   * Get port by name
+   */
+  getPortByName(portName: string): Port | undefined {
+    const inputPort = Array.from(this.inputs.values()).find(p => p.name === portName)
+    if (inputPort) return inputPort
+    
+    const outputPort = Array.from(this.outputs.values()).find(p => p.name === portName)
+    return outputPort
+  }
+
+  /**
    * Get all input ports
    */
   getInputPorts(): Port[] {

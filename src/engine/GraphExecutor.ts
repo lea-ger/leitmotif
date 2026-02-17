@@ -78,8 +78,8 @@ export class GraphExecutor {
         
         if (!sourceNode || !targetNode) return
         
-        const sourcePort = sourceNode.getPort(conn.sourcePortId)
-        const targetPort = targetNode.getPort(conn.targetPortId)
+        const sourcePort = sourceNode.getPortByName(conn.sourcePortName)
+        const targetPort = targetNode.getPortByName(conn.targetPortName)
         
         if (sourcePort && targetPort) {
           // Copy value from source output to target input

@@ -51,13 +51,14 @@ export interface Port {
 
 /**
  * Connection between two ports
+ * Uses port names instead of IDs for stability across saves/loads
  */
 export interface Connection {
   id: string
   sourceNodeId: string
-  sourcePortId: string
+  sourcePortName: string  // Stable identifier (e.g., "frequency", "audio")
   targetNodeId: string
-  targetPortId: string
+  targetPortName: string  // Stable identifier (e.g., "param_volume", "input")
   dataType: DataType
 }
 

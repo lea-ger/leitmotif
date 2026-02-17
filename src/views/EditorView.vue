@@ -239,7 +239,7 @@ onBeforeUnmount(() => {
 watch([() => graphStore.nodeInstances, () => graphStore.allConnections], () => {
   const nodes = Array.from(graphStore.nodeInstances.values()) as BaseNode[]
   executor.setGraph(nodes, graphStore.allConnections)
-  
+  console.log('Graph updated. Nodes:', nodes.length, 'Connections:', graphStore.allConnections.length)
   // Auto-save to localStorage on changes
   graphStore.saveToLocalStorage()
 }, {deep: true})

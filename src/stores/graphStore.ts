@@ -82,7 +82,7 @@ export const useGraphStore = defineStore('graph', () => {
 
     if (!sourceNode || !targetNode) return false
 
-    // Get ports
+    // Get ports by ID (from Vue Flow handles)
     const sourcePort = sourceNode.getPort(flowConnection.sourceHandle || '')
     const targetPort = targetNode.getPort(flowConnection.targetHandle || '')
 
@@ -94,13 +94,13 @@ export const useGraphStore = defineStore('graph', () => {
       return false
     }
 
-    // Create connection
+    // Create connection using port names (stable identifiers)
     const connection: Connection = {
       id: generateId(),
       sourceNodeId: sourceNode.id,
-      sourcePortId: sourcePort.id,
+      sourcePortName: sourcePort.name,  // Use name instead of ID
       targetNodeId: targetNode.id,
-      targetPortId: targetPort.id,
+      targetPortName: targetPort.name,  // Use name instead of ID
       dataType: sourcePort.dataType
     }
 
@@ -130,17 +130,17 @@ export const useGraphStore = defineStore('graph', () => {
     const connection = connections.value.get(connectionId)
     if (!connection) return
 
-    // Unmark ports
+    // Unmark ports using names
     const sourceNode = nodeInstances.value.get(connection.sourceNodeId)
     const targetNode = nodeInstances.value.get(connection.targetNodeId)
 
     if (sourceNode) {
-      const port = sourceNode.getPort(connection.sourcePortId)
+      const port = sourceNode.getPortByName(connection.sourcePortName)
       if (port) port.connected = false
     }
 
     if (targetNode) {
-      const port = targetNode.getPort(connection.targetPortId)
+      const port = targetNode.getPortByName(connection.targetPortName)
       if (port) port.connected = false
     }
 
@@ -216,12 +216,23 @@ export const useGraphStore = defineStore('graph', () => {
             })
           }
           
+          // Get exposed parameter state
+          const exposedParams: string[] = []
+          if ((node as any).parameterDefinitions instanceof Map) {
+            ;(node as any).parameterDefinitions.forEach((def: any, key: string) => {
+              if (def.exposedAsInput) {
+                exposedParams.push(key)
+              }
+            })
+          }
+          
           return {
             id: node.id,
             type: node.type,
             position: node.position,
             enabled: node.enabled,
-            parameters: params
+            parameters: params,
+            exposedParameters: exposedParams
           }
         }),
         connections: Array.from(connections.value.values())
@@ -252,10 +263,10 @@ export const useGraphStore = defineStore('graph', () => {
 
       // Recreate nodes
       graphData.nodes.forEach((nodeData: any) => {
-        const node = NodeRegistry.create(nodeData.type)
+        const node = NodeRegistry.create(nodeData.type, nodeData.id)
         if (!node) return
 
-        // Restore properties (note: id is readonly, we use the generated one)
+        // Restore properties
         node.position = nodeData.position
         node.enabled = nodeData.enabled
         
@@ -263,6 +274,13 @@ export const useGraphStore = defineStore('graph', () => {
         if (nodeData.parameters) {
           Object.keys(nodeData.parameters).forEach(key => {
             node.setParameter(key, nodeData.parameters[key])
+          })
+        }
+
+        // Restore exposed parameters (must happen after parameters are set)
+        if (nodeData.exposedParameters && Array.isArray(nodeData.exposedParameters)) {
+          nodeData.exposedParameters.forEach((paramId: string) => {
+            node.exposeParameterAsInput(paramId)
           })
         }
 
@@ -282,17 +300,21 @@ export const useGraphStore = defineStore('graph', () => {
         })
       })
 
-      // Recreate connections
+      // Recreate connections using port names
       graphData.connections.forEach((conn: Connection) => {
         const sourceNode = nodeInstances.value.get(conn.sourceNodeId)
         const targetNode = nodeInstances.value.get(conn.targetNodeId)
 
         if (!sourceNode || !targetNode) return
 
-        const sourcePort = sourceNode.getPort(conn.sourcePortId)
-        const targetPort = targetNode.getPort(conn.targetPortId)
+        // Get ports by name (stable identifiers)
+        const sourcePort = sourceNode.getPortByName(conn.sourcePortName)
+        const targetPort = targetNode.getPortByName(conn.targetPortName)
 
-        if (!sourcePort || !targetPort) return
+        if (!sourcePort || !targetPort) {
+          console.warn(`Failed to restore connection: ports not found (${conn.sourcePortName} -> ${conn.targetPortName})`)
+          return
+        }
 
         // Restore connection
         connections.value.set(conn.id, conn)
