@@ -102,7 +102,10 @@
               :max-zoom="2"
           >
             <template #node-custom="nodeProps">
-              <NodeComponent :data="nodeProps.data"/>
+              <NodeComponent
+                  :data="nodeProps.data"
+                  @delete=""
+              />
             </template>
           </VueFlow>
         </div>
@@ -136,11 +139,16 @@
           <button
               class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2"
               @click="confirmDeleteChange = null"
-          >✕
+          >
+            <Icon icon="ph:x" />
           </button>
         </form>
         <h3 class="text-lg font-bold">Are you sure?</h3>
-        <button class="btn" @click="deleteNodeConfirmed">Confirm</button>
+        <div class="modal-action">
+          <form method="dialog">
+            <button class="btn" @click="deleteNodeConfirmed">Confirm</button>
+          </form>
+        </div>
       </div>
     </dialog>
   </div>
@@ -324,6 +332,7 @@ function onNodesChange(changes: NodeChange[]) {
       confirmDeleteChange.value = change
     }
   }
+  debugger
 
   applyNodeChanges(nextChanges)
 }

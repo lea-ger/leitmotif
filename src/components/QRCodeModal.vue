@@ -33,7 +33,8 @@
             class="btn btn-square"
             :class="copied ? 'btn-success' : 'btn-ghost'"
           >
-            {{ copied ? '✓' : '📋' }}
+            <Icon v-if="!copied" icon="ph:clipboard" />
+            <Icon v-else icon="ph:check" />
           </button>
         </div>
       </div>
@@ -64,6 +65,7 @@
 import { ref, computed } from 'vue'
 import QrcodeVue from 'qrcode.vue'
 import { useSessionStore } from '../stores/sessionStore'
+import {Icon} from "@iconify/vue";
 
 const dialogRef = ref<HTMLDialogElement | null>(null)
 const copied = ref(false)

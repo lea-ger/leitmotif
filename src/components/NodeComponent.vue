@@ -1,37 +1,43 @@
 <template>
-  <div 
-    class="bg-base-100 border-2 rounded-lg min-w-[180px] shadow-md transition-all duration-200 flex flex-col"
-    :class="{ 
+  <div
+      class="bg-base-100 border-2 rounded-lg min-w-[180px] shadow-md transition-all duration-200 flex flex-col"
+      :class="{
       'shadow-[0_0_0_2px_var(--node-color),0_0_20px_rgba(0,0,0,0.3),0_0_40px_color-mix(in_srgb,var(--node-color)_40%,transparent)] border-[3px] scale-[1.02]': isSelected 
     }"
-    :style="{ 
+      :style="{
       borderColor: nodeColor,
       '--node-color': nodeColor 
     }"
   >
-    <div 
-      class="flex items-center gap-2 px-3 py-2 border-b border-base-content/10 bg-base-200 rounded-t-md"
-      :style="isSelected ? { background: `color-mix(in srgb, var(--node-color) 15%, oklch(var(--b2)))` } : {}"
+    <div
+        class="flex items-center gap-2 px-3 py-2 border-b border-base-content/10 bg-base-200 rounded-t-md"
+        :style="isSelected ? { background: `color-mix(in srgb, var(--node-color) 15%, oklch(var(--b2)))` } : {}"
     >
-      <Icon :icon="metadata?.icon || ''" class="text-base" />
+      <Icon :icon="metadata?.icon || ''" class="text-base"/>
       <span class="font-semibold text-[13px] flex-1 overflow-hidden text-ellipsis whitespace-nowrap">
         {{ node.name }}
       </span>
+      <button
+          class="btn btn-square btn-xs btn-ghost btn-error"
+          @click="$emit('delete')"
+      >
+        <Icon icon="ph:trash" />
+      </button>
     </div>
 
     <div class="flex">
       <!-- Input Ports -->
       <div v-if="inputPorts.length > 0" class="py-2 px-1 flex-1">
         <div
-          v-for="port in inputPorts"
-          :key="port.id"
-          class="flex items-center gap-2 px-2 py-1 relative"
+            v-for="port in inputPorts"
+            :key="port.id"
+            class="flex items-center gap-2 px-2 py-1 relative"
         >
           <Handle
-            :id="port.id"
-            type="target"
-            :position="Position.Left"
-            :style="{ background: getPortColor(port.dataType) }"
+              :id="port.id"
+              type="target"
+              :position="Position.Left"
+              :style="{ background: getPortColor(port.dataType) }"
           />
           <span class="text-[11px] text-base-content/70">{{ port.name }}</span>
         </div>
@@ -40,16 +46,16 @@
       <!-- Output Ports -->
       <div v-if="outputPorts.length > 0" class="py-2 px-1 flex-1">
         <div
-          v-for="port in outputPorts"
-          :key="port.id"
-          class="flex items-center gap-2 px-2 py-1 relative justify-end"
+            v-for="port in outputPorts"
+            :key="port.id"
+            class="flex items-center gap-2 px-2 py-1 relative justify-end"
         >
           <span class="text-[11px] text-base-content/70">{{ port.name }}</span>
           <Handle
-            :id="port.id"
-            type="source"
-            :position="Position.Right"
-            :style="{ background: getPortColor(port.dataType) }"
+              :id="port.id"
+              type="source"
+              :position="Position.Right"
+              :style="{ background: getPortColor(port.dataType) }"
           />
         </div>
       </div>
@@ -71,6 +77,10 @@ interface Props {
     metadata?: NodeMetadata
   }
 }
+
+const emits = defineEmits<{
+  delete: []
+}>()
 
 const props = defineProps<Props>()
 const graphStore = useGraphStore()
