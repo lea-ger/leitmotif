@@ -62,40 +62,41 @@
 
     <div class="editor-content relative">
       <!-- Toggle button when panel is closed -->
-      <button 
-        v-if="!isPeerPanelOpen"
-        @click="isPeerPanelOpen = true"
-        class="btn btn-circle btn-primary absolute left-4 top-4 z-30"
-        title="Open Peers Panel"
+      <button
+          v-if="!isPeerPanelOpen"
+          @click="isPeerPanelOpen = true"
+          class="btn btn-circle btn-primary absolute left-4 top-4 z-30"
+          title="Open Peers Panel"
       >
-        <Icon icon="ph:users-three" />
+        <Icon icon="ph:users-three"/>
       </button>
-      
+
       <!-- Peer Panel on Left Side -->
       <PeerPanel
           v-model:is-open="isPeerPanelOpen"
           @add-peer-node="addPeerNodeToGraph"
           @add-all-peers-node="addAllPeersNodeToGraph"
       />
-      
+
       <!-- Main Canvas Area -->
       <div class="flex flex-col absolute w-full h-full">
         <div class="absolute top-4 left-4 font-mono text-xs text-base-content/60 z-10">
           FPS: {{ currentFPS }}
         </div>
-        
+
         <!-- Node Library -->
         <NodeLibraryModal ref="nodeLibraryModalRef"/>
 
         <!-- Vue Flow Canvas -->
         <div class="flow-container" @drop="onDrop" @dragover.prevent>
           <VueFlow
-              v-model:nodes="flowNodes"
-              v-model:edges="flowEdges"
+              :nodes="flowNodes"
+              :edges="flowEdges"
               @connect="onConnect"
               @nodes-change="onNodesChange"
               @edges-change="onEdgesChange"
               @node-click="onNodeClick"
+              :delete-key-code="null"
               :connection-line-style="{ stroke: '#6366f1', strokeWidth: 2 }"
               :default-zoom="0.8"
               :min-zoom="0.1"
@@ -104,7 +105,7 @@
             <template #node-custom="nodeProps">
               <NodeComponent
                   :data="nodeProps.data"
-                  @delete=""
+                  @delete="confirmDeleteById(nodeProps.id)"
               />
             </template>
           </VueFlow>
@@ -122,10 +123,10 @@
     </div>
 
     <!-- Node Settings Panel -->
-    <NodeSettingsPanel 
-      :selected-node="graphStore.selectedNode"
-      :metadata="selectedNodeMetadata"
-      @close="graphStore.selectNode(null)"
+    <NodeSettingsPanel
+        :selected-node="graphStore.selectedNode"
+        :metadata="selectedNodeMetadata"
+        @close="graphStore.selectNode(null)"
     />
 
     <!-- QR Code Modal -->
@@ -140,7 +141,7 @@
               class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2"
               @click="confirmDeleteChange = null"
           >
-            <Icon icon="ph:x" />
+            <Icon icon="ph:x"/>
           </button>
         </form>
         <h3 class="text-lg font-bold">Are you sure?</h3>
@@ -155,9 +156,15 @@
 </template>
 
 <script setup lang="ts">
-import {ref, onMounted, onBeforeUnmount, watch, computed} from 'vue'
-import {VueFlow, useVueFlow, type NodeRemoveChange} from '@vue-flow/core'
-import type {Connection as FlowConnection, NodeChange, EdgeChange} from '@vue-flow/core'
+import {computed, onBeforeUnmount, onMounted, ref, watch} from 'vue'
+import {
+  type Connection as FlowConnection,
+  type EdgeChange,
+  type NodeChange,
+  type NodeRemoveChange,
+  useVueFlow,
+  VueFlow
+} from '@vue-flow/core'
 import {useGraphStore} from '../stores/graphStore'
 import {usePeerStore} from '../stores/peerStore'
 import {useSessionStore} from '../stores/sessionStore'
@@ -173,7 +180,7 @@ import '@vue-flow/core/dist/theme-default.css'
 import {Icon} from "@iconify/vue";
 import NodeLibraryModal from "../components/NodeLibraryModal.vue";
 import NodeSettingsPanel from "../components/NodeSettingsPanel.vue";
-import { NodeRegistry } from '../nodes/NodeRegistry';
+import {NodeRegistry} from '../nodes/NodeRegistry';
 
 // Register all node types
 registerAllNodes()
@@ -181,18 +188,10 @@ registerAllNodes()
 const graphStore = useGraphStore()
 const peerStore = usePeerStore()
 const sessionStore = useSessionStore()
-const flowNodes = computed({
-  get: () => graphStore.flowNodes,
-  set: (value) => {
-    graphStore.flowNodes = value
-  }
-})
-const flowEdges = computed({
-  get: () => graphStore.flowEdges,
-  set: (value) => {
-    graphStore.flowEdges = value
-  }
-})
+
+const flowNodes = computed(() => graphStore.flowNodes)
+const flowEdges = computed(() => graphStore.flowEdges)
+
 const executor = new GraphExecutor(60)
 
 const isPlaying = ref(false)
@@ -214,10 +213,10 @@ const {project, applyNodeChanges} = useVueFlow()
 onMounted(() => {
   // Start FPS counter
   startFPSCounter()
-  
+
   // Load saved peers from localStorage
   peerStore.loadFromLocalStorage()
-  
+
   // Load saved graph from localStorage
   graphStore.loadFromLocalStorage()
 })
@@ -329,17 +328,34 @@ function onNodesChange(changes: NodeChange[]) {
       graphStore.updateNodePosition(change.id, change.position)
       nextChanges.push(change)
     } else if (change.type === 'remove') {
+      // Store the remove change and show confirmation modal
       confirmDeleteChange.value = change
+      // Don't push to nextChanges - we'll apply it after confirmation
+    } else if (change.type === 'select') {
+      // Handle node selection
+      nextChanges.push(change)
+    } else {
+      // Pass through other changes
+      nextChanges.push(change)
     }
   }
-  debugger
 
-  applyNodeChanges(nextChanges)
+  // Only apply non-remove changes immediately
+  if (nextChanges.length > 0) {
+    applyNodeChanges(nextChanges)
+  }
 }
 
 function onNodeClick(event: any) {
   // Select the clicked node
   graphStore.selectNode(event.node.id)
+}
+
+function confirmDeleteById(id: string) {
+  confirmDeleteChange.value = {
+    type: "remove",
+    id,
+  }
 }
 
 function deleteNodeConfirmed() {
