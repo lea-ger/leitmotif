@@ -19,7 +19,7 @@
       </span>
       <button
           class="btn btn-square btn-xs btn-ghost btn-error"
-          @click="$emit('delete')"
+          @click.stop="$emit('delete')"
       >
         <Icon icon="ph:trash" />
       </button>
