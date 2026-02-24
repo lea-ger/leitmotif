@@ -10,6 +10,11 @@ import { markRaw } from 'vue'
 export class ToneSynthNode extends BaseNode {
   private synth: Tone.Synth | null = null
   private isPlaying: boolean = false
+  private lastOscillator: string = ''
+  private lastAttack: number = 0
+  private lastDecay: number = 0
+  private lastSustain: number = 0
+  private lastRelease: number = 0
   
   constructor(id?: string) {
     super('tone-synth', id)
@@ -131,16 +136,69 @@ export class ToneSynthNode extends BaseNode {
     const release = this.getParameter('release')
     const volume = this.getParameter('volume')
     
+    // Clean up old synth if it exists
+    if (this.synth) {
+      if (this.isPlaying) {
+        this.synth.triggerRelease()
+        this.isPlaying = false
+      }
+      this.synth.dispose()
+    }
+    
     // Mark as raw to prevent Vue reactivity wrapping
     this.synth = markRaw(new Tone.Synth({
       oscillator: { type: oscType },
       envelope: { attack, decay, sustain, release },
       volume: volume
     }))
+    
+    // Store current parameter values
+    this.lastOscillator = oscType
+    this.lastAttack = attack
+    this.lastDecay = decay
+    this.lastSustain = sustain
+    this.lastRelease = release
+  }
+  
+  private updateSynthParameters(): void {
+    if (!this.synth) return
+    
+    const oscType = this.getParameter('oscillator')
+    const attack = this.getParameter('attack')
+    const decay = this.getParameter('decay')
+    const sustain = this.getParameter('sustain')
+    const release = this.getParameter('release')
+    
+    // Check if oscillator type changed (requires recreation)
+    if (oscType !== this.lastOscillator) {
+      this.setupSynth()
+      return
+    }
+    
+    // Update envelope parameters dynamically
+    if (attack !== this.lastAttack) {
+      this.synth.envelope.attack = attack
+      this.lastAttack = attack
+    }
+    if (decay !== this.lastDecay) {
+      this.synth.envelope.decay = decay
+      this.lastDecay = decay
+    }
+    if (sustain !== this.lastSustain) {
+      this.synth.envelope.sustain = sustain
+      this.lastSustain = sustain
+    }
+    if (release !== this.lastRelease) {
+      this.synth.envelope.release = release
+      this.lastRelease = release
+    }
   }
 
   process(): void {
     if (!this.synth) return
+    
+    // Update synth parameters if they changed
+    this.updateSynthParameters()
     
     const mode = this.getParameter('mode')
     const frequency = this.getInputValue('frequency') ?? this.getParameter('defaultFrequency')

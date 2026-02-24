@@ -108,6 +108,17 @@ export class GraphExecutor {
   async start(): Promise<void> {
     if (this.isRunning) return
     
+    // Re-initialize synth nodes that may have been cleaned up
+    this.nodes.forEach(node => {
+      if (node.type === 'tone-synth' && (node as any).synth === null) {
+        try {
+          (node as any).setupSynth()
+        } catch (e) {
+          console.warn('Failed to reinitialize synth:', e)
+        }
+      }
+    })
+    
     this.isRunning = true
     const frameInterval = 1000 / this.targetFPS
     let lastFrameTime = performance.now()
@@ -138,6 +149,18 @@ export class GraphExecutor {
       cancelAnimationFrame(this.animationFrameId)
       this.animationFrameId = null
     }
+    
+    // Stop all audio by calling cleanup on audio-related nodes
+    this.nodes.forEach(node => {
+      // Cleanup audio output and synth nodes to stop sound
+      if (node.type === 'audio-output' || node.type === 'tone-synth') {
+        try {
+          node.cleanup()
+        } catch (e) {
+          console.warn('Failed to cleanup node on stop:', e)
+        }
+      }
+    })
   }
 
   /**
