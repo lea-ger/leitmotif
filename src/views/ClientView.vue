@@ -2,6 +2,7 @@
 import { onMounted, onBeforeUnmount, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import Peer, { type DataConnection } from 'peerjs'
+import { PEER_OPTIONS } from '../utils/peerConfig'
 
 const route = useRoute()
 const router = useRouter()
@@ -80,13 +81,7 @@ function stopSensors() {
 function connect() {
   if (!roomId.value) { status.value = 'Enter a Host ID'; return }
   status.value = 'Connecting...'
-  const p = new Peer('', {
-    host: '0.peerjs.com',
-    port: 443,
-    path: '/',
-    secure: true,
-    debug: 1,
-  })
+  const p = new Peer(PEER_OPTIONS)
   peer.value = p
 
   p.on('open', () => {

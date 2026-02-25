@@ -43,12 +43,34 @@
         <code class="px-3 py-1 bg-base-100 rounded font-mono text-sm font-bold">
           {{ sessionStore.formattedRoomKey }}
         </code>
+        <!-- Host status indicator -->
+        <span
+            v-if="sessionStore.hostStatus === 'connecting'"
+            class="badge badge-warning badge-sm gap-1"
+        >
+          <span class="loading loading-spinner loading-xs"/>Connecting…
+        </span>
+        <span
+            v-else-if="sessionStore.hostStatus === 'listening'"
+            class="badge badge-success badge-sm"
+        >Ready</span>
+        <span
+            v-else-if="sessionStore.hostStatus === 'error'"
+            class="badge badge-error badge-sm"
+        >Error</span>
         <button
             @click="showQRCode"
-            class="btn btn-square btn-ghost gap-2"
+            class="btn btn-xs btn-square btn-ghost gap-2"
             title="Show QR Code"
         >
           <Icon icon="ph:qr-code"/>
+        </button>
+        <button
+            @click="sessionStore.closeRoom()"
+            class="btn btn-xs btn-square btn-ghost text-error gap-2"
+            title="Close Room"
+        >
+          <Icon icon="ph:x-circle"/>
         </button>
       </div>
       <button
