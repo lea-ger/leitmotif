@@ -1,29 +1,35 @@
 <template>
   <!--
     Peek panel anchored to the bottom-left.
-    Collapsed: only the header (HEADER_H px) peeks above the bottom edge.
+    Collapsed: only the header peeks above the bottom edge (translateY = body height).
     Expanded: slides up to show header + canvas.
   -->
-  <div class="canvas-panel" :class="{ 'is-expanded': isExpanded }">
+  <div
+    class="fixed bottom-0 left-12 w-[480px] z-30 rounded-t-lg overflow-hidden
+           border border-b-0 border-base-content/15 shadow-[0_-4px_24px_oklch(var(--bc)/0.1)]
+           transition-transform duration-[250ms] ease-in-out"
+    :class="isExpanded ? 'translate-y-0' : 'translate-y-[300px]'"
+  >
     <!-- Header (always visible) -->
-    <div class="panel-header" @click="isExpanded = !isExpanded">
+    <div
+      class="h-10 bg-base-300 hover:bg-base-200 flex items-center gap-2 px-3
+             cursor-pointer select-none border-b border-base-content/10 transition-colors"
+      @click="isExpanded = !isExpanded"
+    >
       <Icon icon="ph:monitor-play" class="text-primary" />
       <span class="text-sm font-semibold flex-1">Canvas Output</span>
-      <span v-if="canvasStore.outputCanvas" class="text-xs text-base-content/50 mr-2">
+      <span v-if="canvasStore.outputCanvas" class="text-xs text-base-content/50 mr-1">
         {{ canvasStore.outputCanvas.width }}×{{ canvasStore.outputCanvas.height }}
       </span>
       <button class="btn btn-xs btn-ghost btn-circle" title="Pop out" @click.stop="popOut">
         <Icon icon="ph:arrow-square-out" />
       </button>
-      <Icon
-        :icon="isExpanded ? 'ph:caret-down' : 'ph:caret-up'"
-        class="text-base-content/50"
-      />
+      <Icon :icon="isExpanded ? 'ph:caret-down' : 'ph:caret-up'" class="text-base-content/50" />
     </div>
 
     <!-- Canvas body -->
-    <div class="panel-body">
-      <canvas ref="canvasEl" class="panel-canvas" />
+    <div class="h-[300px] bg-black flex items-center justify-center overflow-hidden">
+      <canvas ref="canvasEl" class="max-w-full max-h-full w-auto h-auto block" />
     </div>
   </div>
 </template>
@@ -92,62 +98,3 @@ function popOut() {
   popupWindow.document.close()
 }
 </script>
-
-<style scoped>
-/* Body height constant — must match the translateY value below */
-.canvas-panel {
-  position: fixed;
-  bottom: 0;
-  left: 48px;
-  width: 480px;
-  z-index: 30;
-  border-radius: 8px 8px 0 0;
-  overflow: hidden;
-  border: 1px solid oklch(var(--bc) / 0.15);
-  border-bottom: none;
-  box-shadow: 0 -4px 24px oklch(var(--bc) / 0.1);
-
-  /* Collapsed: shift down by body height so only the 40px header peeks */
-  transform: translateY(300px);
-  transition: transform 0.25s ease;
-}
-
-.canvas-panel.is-expanded {
-  transform: translateY(0);
-}
-
-.panel-header {
-  height: 40px;
-  background: oklch(var(--b3));
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 0 12px;
-  cursor: pointer;
-  user-select: none;
-  border-bottom: 1px solid oklch(var(--bc) / 0.1);
-}
-
-.panel-header:hover {
-  background: oklch(var(--b2));
-}
-
-.panel-body {
-  height: 300px;
-  background: #000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-}
-
-/* Scale canvas to fit the panel body without distortion */
-.panel-canvas {
-  max-width: 100%;
-  max-height: 100%;
-  width: auto;
-  height: auto;
-  display: block;
-}
-</style>
-
