@@ -322,8 +322,8 @@ export const useGraphStore = defineStore('graph', () => {
         const targetNode = nodeInstances.value.get(conn.targetNodeId)
         if (!sourceNode || !targetNode) return
 
-        const sourcePort = sourceNode.getPortByName(conn.sourcePortName)
-        const targetPort = targetNode.getPortByName(conn.targetPortName)
+        const sourcePort = sourceNode.getOutputPortByName(conn.sourcePortName)
+        const targetPort = targetNode.getInputPortByName(conn.targetPortName)
         if (!sourcePort || !targetPort) {
           console.warn(`Failed to restore connection: ${conn.sourcePortName} -> ${conn.targetPortName}`)
           return

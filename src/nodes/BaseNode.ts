@@ -152,7 +152,7 @@ export abstract class BaseNode {
   }
 
   /**
-   * Get port by name
+   * Get port by name (searches inputs then outputs — ambiguous if both share a name)
    */
   getPortByName(portName: string): Port | undefined {
     const inputPort = Array.from(this.inputs.values()).find(p => p.name === portName)
@@ -160,6 +160,14 @@ export abstract class BaseNode {
     
     const outputPort = Array.from(this.outputs.values()).find(p => p.name === portName)
     return outputPort
+  }
+
+  getInputPortByName(portName: string): Port | undefined {
+    return Array.from(this.inputs.values()).find(p => p.name === portName)
+  }
+
+  getOutputPortByName(portName: string): Port | undefined {
+    return Array.from(this.outputs.values()).find(p => p.name === portName)
   }
 
   /**
