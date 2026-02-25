@@ -97,6 +97,9 @@
                   @delete="confirmDeleteById(nodeProps.id)"
               />
             </template>
+            <template #edge-default="edgeProps">
+              <CustomEdge v-bind="edgeProps" />
+            </template>
           </VueFlow>
         </div>
 
@@ -165,6 +168,7 @@ import {registerAllNodes} from '../nodes'
 import type {BaseNode} from '../nodes/BaseNode'
 import {PeerNode} from '../nodes/input/PeerNode'
 import NodeComponent from '../components/NodeComponent.vue'
+import CustomEdge from '../components/CustomEdge.vue'
 import PeerPanel from '../components/PeerPanel.vue'
 import QRCodeModal from '../components/QRCodeModal.vue'
 import '@vue-flow/core/dist/style.css'
