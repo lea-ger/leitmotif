@@ -4,6 +4,7 @@ import type { Node as FlowNode, Edge as FlowEdge, Connection as FlowConnection }
 import { BaseNode } from '../nodes/BaseNode'
 import { NodeRegistry } from '../nodes/NodeRegistry'
 import { type Connection, canConnect, generateId } from '../nodes/types'
+import * as storage from '../utils/storage'
 
 /**
  * Graph store for managing nodes and connections
@@ -173,9 +174,9 @@ export const useGraphStore = defineStore('graph', () => {
   /**
    * Get selected node instance
    */
-  const selectedNode = computed(() => {
+  const selectedNode = computed((): BaseNode | null => {
     if (!selectedNodeId.value) return null
-    return nodeInstances.value.get(selectedNodeId.value) || null
+    return (nodeInstances.value.get(selectedNodeId.value) as BaseNode) ?? null
   })
 
   /**
@@ -198,35 +199,30 @@ export const useGraphStore = defineStore('graph', () => {
     connections.value.clear()
     flowNodes.value = []
     flowEdges.value = []
-    saveToLocalStorage()
+    saveToStorage().catch(e => console.error('Failed to clear graph storage:', e))
   }
 
   /**
-   * Save graph to localStorage
+   * Save graph to IndexedDB
    */
-  function saveToLocalStorage(): void {
+  async function saveToStorage(): Promise<void> {
     try {
       const graphData = {
         nodes: Array.from(nodeInstances.value.entries()).map(([, node]) => {
-          // Get parameters if available
           const params: Record<string, any> = {}
           if ((node as any).parameters instanceof Map) {
             ;(node as any).parameters.forEach((value: any, key: string) => {
               params[key] = value
             })
           }
-          
-          // Get exposed parameter state
+
           const exposedParams: string[] = []
           if ((node as any).parameterDefinitions instanceof Map) {
             ;(node as any).parameterDefinitions.forEach((def: any, key: string) => {
-              if (def.exposedAsInput) {
-                exposedParams.push(key)
-              }
+              if (def.exposedAsInput) exposedParams.push(key)
             })
           }
-          
-          // Get peer node specific data
+
           let peerConfig: any = undefined
           if (node.type === 'peer' && typeof (node as any).getPeerId === 'function') {
             peerConfig = {
@@ -234,7 +230,7 @@ export const useGraphStore = defineStore('graph', () => {
               enabledCapabilities: (node as any).getEnabledCapabilities?.() || []
             }
           }
-          
+
           return {
             id: node.id,
             type: node.type,
@@ -247,54 +243,58 @@ export const useGraphStore = defineStore('graph', () => {
         }),
         connections: Array.from(connections.value.values())
       }
-      
-      localStorage.setItem('leitmotif-graph', JSON.stringify(graphData))
+
+      await storage.setItem('leitmotif-graph', graphData)
     } catch (error) {
-      console.error('Failed to save graph to localStorage:', error)
+      console.error('Failed to save graph:', error)
     }
   }
 
   /**
-   * Load graph from localStorage
+   * Load graph from IndexedDB (falls back to localStorage for one-time migration)
    */
-  function loadFromLocalStorage(): void {
+  async function loadFromStorage(): Promise<void> {
     try {
-      const saved = localStorage.getItem('leitmotif-graph')
-      if (!saved) return
+      let graphData = await storage.getItem<any>('leitmotif-graph')
 
-      const graphData = JSON.parse(saved)
-      
-      // Clear existing graph
+      // One-time migration from localStorage
+      if (!graphData) {
+        const legacy = localStorage.getItem('leitmotif-graph')
+        if (legacy) {
+          graphData = JSON.parse(legacy)
+          await storage.setItem('leitmotif-graph', graphData)
+          localStorage.removeItem('leitmotif-graph')
+          console.log('Migrated graph from localStorage to IndexedDB')
+        }
+      }
+
+      if (!graphData) return
+
       nodeInstances.value.forEach(node => node.cleanup())
       nodeInstances.value.clear()
       connections.value.clear()
       flowNodes.value = []
       flowEdges.value = []
 
-      // Recreate nodes
       graphData.nodes.forEach((nodeData: any) => {
         const node = NodeRegistry.create(nodeData.type, nodeData.id)
         if (!node) return
 
-        // Restore properties
         node.position = nodeData.position
         node.enabled = nodeData.enabled
-        
-        // Restore parameters
+
         if (nodeData.parameters) {
           Object.keys(nodeData.parameters).forEach(key => {
             node.setParameter(key, nodeData.parameters[key])
           })
         }
 
-        // Restore exposed parameters (must happen after parameters are set)
         if (nodeData.exposedParameters && Array.isArray(nodeData.exposedParameters)) {
           nodeData.exposedParameters.forEach((paramId: string) => {
             node.exposeParameterAsInput(paramId)
           })
         }
 
-        // Restore peer node configuration
         if (nodeData.peerConfig && node.type === 'peer') {
           const peerNode = node as any
           if (nodeData.peerConfig.peerId && typeof peerNode.setPeer === 'function') {
@@ -307,42 +307,32 @@ export const useGraphStore = defineStore('graph', () => {
 
         nodeInstances.value.set(node.id, node)
 
-        // Create Vue Flow node
         const metadata = NodeRegistry.getMetadata(nodeData.type)
         flowNodes.value.push({
           id: node.id,
           type: 'custom',
           position: nodeData.position,
-          data: {
-            node,
-            metadata
-          },
+          data: { node, metadata },
           label: metadata?.displayName || nodeData.type
         })
       })
 
-      // Recreate connections using port names
       graphData.connections.forEach((conn: Connection) => {
         const sourceNode = nodeInstances.value.get(conn.sourceNodeId)
         const targetNode = nodeInstances.value.get(conn.targetNodeId)
-
         if (!sourceNode || !targetNode) return
 
-        // Get ports by name (stable identifiers)
         const sourcePort = sourceNode.getPortByName(conn.sourcePortName)
         const targetPort = targetNode.getPortByName(conn.targetPortName)
-
         if (!sourcePort || !targetPort) {
-          console.warn(`Failed to restore connection: ports not found (${conn.sourcePortName} -> ${conn.targetPortName})`)
+          console.warn(`Failed to restore connection: ${conn.sourcePortName} -> ${conn.targetPortName}`)
           return
         }
 
-        // Restore connection
         connections.value.set(conn.id, conn)
         sourcePort.connected = true
         targetPort.connected = true
 
-        // Add to Vue Flow
         flowEdges.value.push({
           id: conn.id,
           source: sourceNode.id,
@@ -353,9 +343,9 @@ export const useGraphStore = defineStore('graph', () => {
         })
       })
 
-      console.log('Graph loaded from localStorage')
+      console.log('Graph loaded from IndexedDB')
     } catch (error) {
-      console.error('Failed to load graph from localStorage:', error)
+      console.error('Failed to load graph:', error)
     }
   }
 
@@ -390,7 +380,7 @@ export const useGraphStore = defineStore('graph', () => {
     selectNode,
     updateNodePorts,
     clear,
-    saveToLocalStorage,
-    loadFromLocalStorage
+    saveToStorage,
+    loadFromStorage
   }
 })

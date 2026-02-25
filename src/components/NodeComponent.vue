@@ -21,7 +21,7 @@
           class="btn btn-square btn-xs btn-ghost btn-error"
           @click.stop="$emit('delete')"
       >
-        <Icon icon="ph:trash" />
+        <Icon icon="ph:trash"/>
       </button>
     </div>
 
@@ -100,23 +100,17 @@ function getPortColor(dataType: DataType): string {
 </script>
 
 <style scoped>
-/* Only keep CSS that can't be done with Tailwind */
 :deep(.vue-flow__handle) {
   width: 12px;
   height: 12px;
   border: 2px solid oklch(var(--b1));
-  transition: all 0.15s ease;
-}
-
-:deep(.vue-flow__handle:hover) {
-  transform: scale(1.3);
 }
 
 :deep(.vue-flow__handle-left) {
-  left: -7px;
+  left: -6px;
 }
 
 :deep(.vue-flow__handle-right) {
-  right: -7px;
+  right: -6px;
 }
 </style>

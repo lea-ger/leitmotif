@@ -92,7 +92,7 @@ export interface NodeMetadata {
 export interface NodeParameter {
   id: string
   name: string
-  type: 'number' | 'string' | 'boolean' | 'select'
+  type: 'number' | 'string' | 'boolean' | 'select' | 'image'
   defaultValue: any
   min?: number
   max?: number

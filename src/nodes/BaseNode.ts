@@ -1,3 +1,4 @@
+import { markRaw } from 'vue'
 import { 
   DataType, 
   type Port, 
@@ -138,14 +139,8 @@ export abstract class BaseNode {
   protected setOutputValue(portName: string, value: any): void {
     const port = Array.from(this.outputs.values()).find(p => p.name === portName)
     if (port) {
-      // Don't let Vue wrap Tone.js audio nodes in proxies
-      if (value && typeof value === 'object' && 'context' in value && 'connect' in value) {
-        import('vue').then(({ markRaw }) => {
-          port.value = markRaw(value)
-        })
-      } else {
-        port.value = value
-      }
+      // Never let Vue wrap objects (audio nodes, canvases, etc.) in reactive proxies
+      port.value = (value && typeof value === 'object') ? markRaw(value) : value
     }
   }
 

@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import type { PeerMetadata, PeerDataPayload, PeerCapability, CapabilityType } from './types/peer'
 import { DEFAULT_CAPABILITIES } from './types/peer'
+import * as storage from '../utils/storage'
 
 export const usePeerStore = defineStore('peer', () => {
   const peers = ref<Map<string, PeerMetadata>>(new Map())
@@ -36,7 +37,7 @@ export const usePeerStore = defineStore('peer', () => {
     if (!dataStreams.value.has(peer.id)) {
       dataStreams.value.set(peer.id, new Map())
     }
-    saveToLocalStorage()
+    saveToStorage().catch(e => console.error('Failed to save after addPeer:', e))
   }
 
   /**
@@ -45,7 +46,7 @@ export const usePeerStore = defineStore('peer', () => {
   const removePeer = (peerId: string) => {
     peers.value.delete(peerId)
     dataStreams.value.delete(peerId)
-    saveToLocalStorage()
+    saveToStorage().catch(e => console.error('Failed to save after removePeer:', e))
   }
 
   /**
@@ -145,61 +146,67 @@ export const usePeerStore = defineStore('peer', () => {
   const clearAll = () => {
     peers.value.clear()
     dataStreams.value.clear()
-    saveToLocalStorage()
+    saveToStorage().catch(e => console.error('Failed to clear peer storage:', e))
   }
 
   /**
-   * Save peers to localStorage
+   * Save peers to IndexedDB
    */
-  const saveToLocalStorage = () => {
+  const saveToStorage = async (): Promise<void> => {
     try {
       const peersData = Array.from(peers.value.values()).map(peer => ({
         id: peer.id,
         name: peer.name,
-        connected: false, // Always save as disconnected, will reconnect if available
+        connected: false,
         lastSeen: peer.lastSeen.toISOString(),
         isMock: peer.isMock || false,
         capabilities: peer.capabilities
       }))
-      
-      localStorage.setItem('leitmotif-peers', JSON.stringify(peersData))
+      await storage.setItem('leitmotif-peers', peersData)
     } catch (error) {
-      console.error('Failed to save peers to localStorage:', error)
+      console.error('Failed to save peers:', error)
     }
   }
 
   /**
-   * Load peers from localStorage
+   * Load peers from IndexedDB (falls back to localStorage for one-time migration)
    */
-  const loadFromLocalStorage = () => {
+  const loadFromStorage = async (): Promise<void> => {
     try {
-      const saved = localStorage.getItem('leitmotif-peers')
-      if (!saved) return
+      let peersData = await storage.getItem<any[]>('leitmotif-peers')
 
-      const peersData = JSON.parse(saved)
-      
+      // One-time migration from localStorage
+      if (!peersData) {
+        const legacy = localStorage.getItem('leitmotif-peers')
+        if (legacy) {
+          peersData = JSON.parse(legacy)
+          await storage.setItem('leitmotif-peers', peersData)
+          localStorage.removeItem('leitmotif-peers')
+          console.log('Migrated peers from localStorage to IndexedDB')
+        }
+      }
+
+      if (!peersData) return
+
       peersData.forEach((peerData: any) => {
         const peer: PeerMetadata = {
           id: peerData.id,
           name: peerData.name,
-          connected: false, // Start as disconnected
+          connected: false,
           lastSeen: new Date(peerData.lastSeen),
           isMock: peerData.isMock || false,
           capabilities: peerData.capabilities
         }
-        
         addPeer(peer)
-        
-        // Auto-restart mock peers
         if (peer.isMock) {
           peer.connected = true
           startMockDataGeneration(peer.id)
         }
       })
-      
-      console.log(`Loaded ${peersData.length} peer(s) from localStorage`)
+
+      console.log(`Loaded ${peersData.length} peer(s) from IndexedDB`)
     } catch (error) {
-      console.error('Failed to load peers from localStorage:', error)
+      console.error('Failed to load peers:', error)
     }
   }
 
@@ -306,7 +313,7 @@ export const usePeerStore = defineStore('peer', () => {
     clearAll,
     addMockPeer,
     removeMockPeer,
-    saveToLocalStorage,
-    loadFromLocalStorage
+    saveToStorage,
+    loadFromStorage
   }
 })

@@ -61,26 +61,15 @@
     </div>
 
     <div class="editor-content relative">
-      <!-- Toggle button when panel is closed -->
-      <button
-          v-if="!isPeerPanelOpen"
-          @click="isPeerPanelOpen = true"
-          class="btn btn-circle btn-primary absolute left-4 top-4 z-30"
-          title="Open Peers Panel"
-      >
-        <Icon icon="ph:users-three"/>
-      </button>
-
-      <!-- Peer Panel on Left Side -->
+      <!-- Peer Panel (always mounted, self-manages open/closed) -->
       <PeerPanel
-          v-model:is-open="isPeerPanelOpen"
           @add-peer-node="addPeerNodeToGraph"
           @add-all-peers-node="addAllPeersNodeToGraph"
       />
 
       <!-- Main Canvas Area -->
       <div class="flex flex-col absolute w-full h-full">
-        <div class="absolute top-4 left-4 font-mono text-xs text-base-content/60 z-10">
+        <div class="absolute top-4 right-4 font-mono text-xs text-base-content/60 z-10">
           FPS: {{ currentFPS }}
         </div>
 
@@ -128,6 +117,9 @@
         :metadata="selectedNodeMetadata"
         @close="graphStore.selectNode(null)"
     />
+
+    <!-- Canvas Output Window (always mounted, peeks from bottom-left) -->
+    <CanvasOutputWindow />
 
     <!-- QR Code Modal -->
     <QRCodeModal ref="qrModalRef"/>
@@ -180,6 +172,7 @@ import '@vue-flow/core/dist/theme-default.css'
 import {Icon} from "@iconify/vue";
 import NodeLibraryModal from "../components/NodeLibraryModal.vue";
 import NodeSettingsPanel from "../components/NodeSettingsPanel.vue";
+import CanvasOutputWindow from "../components/CanvasOutputWindow.vue";
 import {NodeRegistry} from '../nodes/NodeRegistry';
 
 // Register all node types
@@ -196,40 +189,38 @@ const executor = new GraphExecutor(60)
 
 const isPlaying = ref(false)
 const currentFPS = ref(0)
-const isPeerPanelOpen = ref(true)
 const audioEnabled = ref(false)
 const qrModalRef = ref<InstanceType<typeof QRCodeModal> | null>(null)
 const nodeLibraryModalRef = ref<InstanceType<typeof NodeLibraryModal> | null>(null)
 const confirmDeleteChange = ref<NodeRemoveChange | null>(null)
 const selectedNodeMetadata = computed(() => {
   if (!graphStore.selectedNode) return undefined
-  return NodeRegistry.getMetadata(graphStore.selectedNode.type)
+  return NodeRegistry.getMetadata(graphStore.selectedNode.type) ?? undefined
 })
 let fpsInterval: number | null = null
 
 // Vue Flow instance
 const {project, applyNodeChanges} = useVueFlow()
 
-onMounted(() => {
-  // Start FPS counter
+// Debounced auto-save: waits 600ms after last change before writing to IndexedDB
+let saveTimer: ReturnType<typeof setTimeout> | null = null
+function scheduleSave() {
+  if (saveTimer) clearTimeout(saveTimer)
+  saveTimer = setTimeout(() => { graphStore.saveToStorage() }, 600)
+}
+
+onMounted(async () => {
   startFPSCounter()
-
-  // Load saved peers from localStorage
-  peerStore.loadFromLocalStorage()
-
-  // Load saved graph from localStorage
-  graphStore.loadFromLocalStorage()
+  await peerStore.loadFromStorage()
+  await graphStore.loadFromStorage()
 })
 
 onBeforeUnmount(() => {
   executor.stop()
-  if (fpsInterval) {
-    clearInterval(fpsInterval)
-  }
-  // Save graph before unmounting
-  graphStore.saveToLocalStorage()
-  // Save peers before unmounting
-  peerStore.saveToLocalStorage()
+  if (fpsInterval) clearInterval(fpsInterval)
+  if (saveTimer) clearTimeout(saveTimer)
+  graphStore.saveToStorage()
+  peerStore.saveToStorage()
 })
 
 // Watch graph changes and update executor
@@ -237,8 +228,7 @@ watch([() => graphStore.nodeInstances, () => graphStore.allConnections], () => {
   const nodes = Array.from(graphStore.nodeInstances.values()) as BaseNode[]
   executor.setGraph(nodes, graphStore.allConnections)
   console.log('Graph updated. Nodes:', nodes.length, 'Connections:', graphStore.allConnections.length)
-  // Auto-save to localStorage on changes
-  graphStore.saveToLocalStorage()
+  scheduleSave()
 }, {deep: true})
 
 async function enableAudio() {

@@ -94,6 +94,37 @@
               </option>
             </select>
 
+            <!-- Image Upload -->
+            <div v-else-if="param.type === 'image'" class="flex flex-col gap-2">
+              <div
+                v-if="getParameterValue(param.id)"
+                class="rounded overflow-hidden border border-base-content/10 max-h-32 flex items-center justify-center bg-base-300"
+              >
+                <img
+                  :src="getParameterValue(param.id)"
+                  class="max-w-full max-h-32 object-contain"
+                  alt="preview"
+                />
+              </div>
+              <label class="btn btn-xs btn-outline w-full cursor-pointer">
+                <Icon icon="ph:upload-simple" />
+                {{ getParameterValue(param.id) ? 'Replace Image' : 'Upload Image' }}
+                <input
+                  type="file"
+                  accept="image/*"
+                  class="hidden"
+                  @change="onImageUpload(param.id, $event)"
+                />
+              </label>
+              <button
+                v-if="getParameterValue(param.id)"
+                class="btn btn-xs btn-ghost btn-error w-full"
+                @click="updateParameter(param.id, '')"
+              >
+                <Icon icon="ph:trash" /> Remove
+              </button>
+            </div>
+
             <!-- Show connected indicator -->
             <div 
               v-if="param.exposedAsInput && isParameterConnected(param.id)" 
@@ -161,6 +192,16 @@ function isParameterConnected(parameterId: string): boolean {
   const port = props.selectedNode.getInputPorts().find(p => p.name === portName)
   
   return port?.connected || false
+}
+
+function onImageUpload(parameterId: string, event: Event): void {
+  const file = (event.target as HTMLInputElement).files?.[0]
+  if (!file || !props.selectedNode) return
+  const reader = new FileReader()
+  reader.onload = () => {
+    props.selectedNode!.setParameter(parameterId, reader.result as string)
+  }
+  reader.readAsDataURL(file)
 }
 </script>
 
