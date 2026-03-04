@@ -23,7 +23,8 @@ export class PeerNode extends BaseNode {
       displayName: 'Peer',
       description: 'Represents a connected peer with configurable data streams',
       color: '#3b82f6',
-      icon: 'ph:user'
+      icon: 'ph:user',
+      showInLibrary: false
     }
   }
 

@@ -17,13 +17,13 @@ export type DataType = typeof DataType[keyof typeof DataType]
  * Color coding for each data type (for UI visualization)
  */
 export const DATA_TYPE_COLORS: Record<DataType, string> = {
-  [DataType.AUDIO]: '#8A38F5',
-  [DataType.VIDEO]: '#3b82f6',
-  [DataType.CANVAS]: '#00BFE5',
-  [DataType.NUMERIC]: '#E57E00',
-  [DataType.EVENT]: '#ef4444',
-  [DataType.OBJECT]: '#E50000',
-  [DataType.ANY]: '#6b7280'
+  [DataType.AUDIO]: '#10b981',   // green
+  [DataType.VIDEO]: '#3b82f6',   // blue
+  [DataType.CANVAS]: '#00BFE5',  // cyan
+  [DataType.NUMERIC]: '#f59e0b', // amber
+  [DataType.EVENT]: '#ef4444',   // red
+  [DataType.OBJECT]: '#8b5cf6',  // violet
+  [DataType.ANY]: '#6b7280'      // gray
 }
 
 /**
@@ -84,6 +84,7 @@ export interface NodeMetadata {
   description: string
   color?: string
   icon?: string
+  showInLibrary?: boolean  // false = only addable via special UI (e.g. peer panel)
 }
 
 /**

@@ -11,6 +11,7 @@
   "dependencies": {
     "@iconify/vue": "^5.0.0",
     "@vue-flow/core": "^1.48.1",
+    "cel-js": "^0.8.2",
     "daisyui": "5.1.31",
     "peerjs": "^1.5.5",
     "pinia": "^3.0.4",

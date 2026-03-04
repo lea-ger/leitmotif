@@ -20,7 +20,7 @@ export class CanvasOutputNode extends BaseNode {
       category: NodeCategory.OUTPUT,
       displayName: 'Canvas Output',
       description: 'Sends the canvas to the output window for display',
-      color: '#8b5cf6',
+      color: '#00BFE5',
       icon: 'ph:monitor-play'
     }
   }
