@@ -9,6 +9,7 @@ import { markRaw } from 'vue'
  */
 export class ToneSynthNode extends BaseNode {
   private synth: Tone.Synth | null = null
+  private analyser: Tone.Waveform | null = null
   private isPlaying: boolean = false
   private lastOscillator: string = ''
   private lastAttack: number = 0
@@ -144,6 +145,10 @@ export class ToneSynthNode extends BaseNode {
       }
       this.synth.dispose()
     }
+
+    if (this.analyser) {
+      this.analyser.dispose()
+    }
     
     // Mark as raw to prevent Vue reactivity wrapping
     this.synth = markRaw(new Tone.Synth({
@@ -151,6 +156,10 @@ export class ToneSynthNode extends BaseNode {
       envelope: { attack, decay, sustain, release },
       volume: volume
     }))
+
+    // Tap signal for preview — does not affect audio routing
+    this.analyser = markRaw(new Tone.Waveform(256))
+    this.synth.connect(this.analyser)
     
     // Store current parameter values
     this.lastOscillator = oscType
@@ -241,6 +250,11 @@ export class ToneSynthNode extends BaseNode {
     this.setOutputValue('audio', this.synth)
   }
 
+  /** Returns live waveform samples for preview, or null if not playing */
+  getWaveformValues(): Float32Array | null {
+    return this.analyser ? this.analyser.getValue() as Float32Array : null
+  }
+
   cleanup(): void {
     if (this.synth) {
       if (this.isPlaying) {
@@ -248,6 +262,10 @@ export class ToneSynthNode extends BaseNode {
       }
       this.synth.dispose()
       this.synth = null
+    }
+    if (this.analyser) {
+      this.analyser.dispose()
+      this.analyser = null
     }
     this.isPlaying = false
   }

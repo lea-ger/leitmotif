@@ -25,6 +25,9 @@ export const useGraphStore = defineStore('graph', () => {
   // Selected node
   const selectedNodeId = ref<string | null>(null)
 
+  // Nodes with preview enabled
+  const nodePreviewEnabled = ref<Set<string>>(new Set())
+
   /**
    * Add a new node to the graph
    */
@@ -165,6 +168,27 @@ export const useGraphStore = defineStore('graph', () => {
   }
 
   /**
+   * Toggle preview visibility for a node
+   */
+  function toggleNodePreview(nodeId: string): void {
+    const s = nodePreviewEnabled.value
+    if (s.has(nodeId)) {
+      s.delete(nodeId)
+    } else {
+      s.add(nodeId)
+    }
+    // trigger reactivity
+    nodePreviewEnabled.value = new Set(s)
+  }
+
+  /**
+   * Check if a node has preview enabled
+   */
+  function isPreviewEnabled(nodeId: string): boolean {
+    return nodePreviewEnabled.value.has(nodeId)
+  }
+
+  /**
    * Select a node
    */
   function selectNode(nodeId: string | null): void {
@@ -241,7 +265,8 @@ export const useGraphStore = defineStore('graph', () => {
             peerConfig
           }
         }),
-        connections: Array.from(connections.value.values())
+        connections: Array.from(connections.value.values()),
+        previewEnabled: Array.from(nodePreviewEnabled.value)
       }
 
       await storage.setItem('leitmotif-graph', graphData)
@@ -344,6 +369,9 @@ export const useGraphStore = defineStore('graph', () => {
       })
 
       console.log('Graph loaded from IndexedDB')
+      if (Array.isArray(graphData.previewEnabled)) {
+        nodePreviewEnabled.value = new Set(graphData.previewEnabled)
+      }
     } catch (error) {
       console.error('Failed to load graph:', error)
     }
@@ -370,6 +398,7 @@ export const useGraphStore = defineStore('graph', () => {
     allConnections,
     selectedNodeId,
     selectedNode,
+    nodePreviewEnabled,
 
     // Actions
     addNode,
@@ -379,6 +408,8 @@ export const useGraphStore = defineStore('graph', () => {
     updateNodePosition,
     selectNode,
     updateNodePorts,
+    toggleNodePreview,
+    isPreviewEnabled,
     clear,
     saveToStorage,
     loadFromStorage

@@ -18,6 +18,15 @@
         {{ node.name }}
       </span>
       <button
+          v-if="supportsPreview"
+          class="btn btn-square btn-xs btn-ghost"
+          :class="previewEnabled ? 'text-base-content' : 'text-base-content/30'"
+          @click.stop="graphStore.toggleNodePreview(node.id)"
+          title="Toggle preview"
+      >
+        <Icon :icon="previewEnabled ? 'ph:eye' : 'ph:eye-slash'"/>
+      </button>
+      <button
           class="btn btn-square btn-xs btn-ghost btn-error"
           @click.stop="$emit('delete')"
       >
@@ -60,6 +69,13 @@
         </div>
       </div>
     </div>
+
+    <!-- Node Preview -->
+    <NodePreview
+        v-if="previewEnabled && supportsPreview"
+        :node="node"
+        :node-color="nodeColor"
+    />
   </div>
 </template>
 
@@ -70,6 +86,7 @@ import {BaseNode} from '../nodes/BaseNode'
 import {DATA_TYPE_COLORS, DataType, type NodeMetadata} from '../nodes/types'
 import {Icon} from "@iconify/vue";
 import {useGraphStore} from '../stores/graphStore'
+import NodePreview from './NodePreview.vue'
 
 interface Props {
   data: {
@@ -93,6 +110,12 @@ const outputPorts = computed(() => node.value.getOutputPorts())
 
 const nodeColor = computed(() => metadata.value?.color || '#6b7280')
 const isSelected = computed(() => graphStore.selectedNodeId === node.value.id)
+
+const supportsPreview = computed(() => {
+  if (node.value.type === 'tone-synth') return true
+  return node.value.getOutputPorts().some(p => p.dataType === DataType.CANVAS)
+})
+const previewEnabled = computed(() => graphStore.isPreviewEnabled(node.value.id))
 
 function getPortColor(dataType: DataType): string {
   return DATA_TYPE_COLORS[dataType]
