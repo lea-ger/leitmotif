@@ -118,6 +118,13 @@ export const usePeerStore = defineStore('peer', () => {
     }
   }
 
+  const setPeerLayout = (peerId: string, layout: import('./types/peer').LayoutName): void => {
+    const peer = peers.value.get(peerId)
+    if (!peer) return
+    peer.currentLayout = layout
+    sendToPeer(peerId, { type: 'layout', layout })
+  }
+
   /**
    * Update data from a peer for a specific capability
    */
@@ -343,6 +350,7 @@ export const usePeerStore = defineStore('peer', () => {
     removeMockPeer,
     sendToPeer,
     sendToAllPeers,
+    setPeerLayout,
     saveToStorage,
     loadFromStorage
   }

@@ -124,6 +124,27 @@
               </div>
             </div>
 
+            <!-- Layout picker (only for live peers) -->
+            <div v-if="!peer.isMock && peer.connected" class="mt-2">
+              <div class="text-xs text-base-content/50 mb-1 flex items-center gap-1">
+                <Icon icon="ph:layout" class="text-sm" />
+                Client Layout
+              </div>
+              <div class="grid grid-cols-4 gap-1">
+                <button
+                  v-for="layout in LAYOUTS"
+                  :key="layout.value"
+                  class="btn btn-xs flex-col gap-0.5 h-auto py-1.5"
+                  :class="peer.currentLayout === layout.value ? 'btn-primary' : 'btn-ghost'"
+                  @click.stop="setLayout(peer.id, layout.value)"
+                  :title="layout.label"
+                >
+                  <Icon :icon="layout.icon" class="text-sm" />
+                  <span class="text-[9px] leading-none">{{ layout.label }}</span>
+                </button>
+              </div>
+            </div>
+
             <div class="flex items-center gap-1 mt-2 text-xs text-base-content/50">
               <Icon icon="ph:clock" />
               {{ formatLastSeen(peer.lastSeen) }}
@@ -138,7 +159,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { usePeerStore } from '../stores/peerStore'
-import type { CapabilityType } from '../stores/types/peer'
+import type { CapabilityType, LayoutName } from '../stores/types/peer'
 import { Icon } from '@iconify/vue'
 
 const emit = defineEmits<{
@@ -178,6 +199,17 @@ function startDragAllPeers(event: DragEvent) {
 function updateCapability(peerId: string, capabilityType: CapabilityType, enabled: boolean) {
   peerStore.setCapabilityEnabled(peerId, capabilityType, enabled)
 }
+
+function setLayout(peerId: string, layout: LayoutName) {
+  peerStore.setPeerLayout(peerId, layout)
+}
+
+const LAYOUTS: { value: LayoutName; label: string; icon: string }[] = [
+  { value: 'empty',    label: 'Default',  icon: 'ph:house' },
+  { value: 'keyboard', label: 'Keyboard', icon: 'ph:piano-keys' },
+  { value: 'canvas',   label: 'Canvas',   icon: 'ph:paint-brush' },
+  { value: 'touchpad', label: 'Touchpad', icon: 'ph:hand-tap' },
+]
 
 function formatCapabilityName(type: string): string {
   const names: Record<string, string> = {

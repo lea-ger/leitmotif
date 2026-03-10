@@ -39,6 +39,7 @@ export interface PeerMetadata {
   lastSeen: Date
   connection?: any
   isMock?: boolean
+  currentLayout?: LayoutName
 }
 
 export interface PeerDataPayload<T = any> {
