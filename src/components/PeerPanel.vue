@@ -159,6 +159,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { usePeerStore } from '../stores/peerStore'
+import { useGraphStore } from '../stores/graphStore'
 import type { CapabilityType, LayoutName } from '../stores/types/peer'
 import { Icon } from '@iconify/vue'
 
@@ -168,6 +169,7 @@ const emit = defineEmits<{
 }>()
 
 const peerStore = usePeerStore()
+const graphStore = useGraphStore()
 const isOpen = ref(false)
 
 const connectedPeers = computed(() => peerStore.connectedPeers)
@@ -198,10 +200,12 @@ function startDragAllPeers(event: DragEvent) {
 
 function updateCapability(peerId: string, capabilityType: CapabilityType, enabled: boolean) {
   peerStore.setCapabilityEnabled(peerId, capabilityType, enabled)
+  graphStore.syncPeerNodePorts(peerId)
 }
 
 function setLayout(peerId: string, layout: LayoutName) {
   peerStore.setPeerLayout(peerId, layout)
+  graphStore.syncPeerNodePorts(peerId)
 }
 
 const LAYOUTS: { value: LayoutName; label: string; icon: string }[] = [

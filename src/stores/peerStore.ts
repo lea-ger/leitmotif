@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
-import { ref, computed } from 'vue'
-import type { PeerMetadata, PeerDataPayload, PeerCapability, CapabilityType } from './types/peer'
-import { DEFAULT_CAPABILITIES } from './types/peer'
+import { ref, computed, toRaw } from 'vue'
+import type { PeerMetadata, PeerDataPayload, PeerCapability, CapabilityType, LayoutName } from './types/peer'
+import { DEFAULT_CAPABILITIES, CapabilityType as CT } from './types/peer'
 import * as storage from '../utils/storage'
 
 export const usePeerStore = defineStore('peer', () => {
@@ -94,7 +94,7 @@ export const usePeerStore = defineStore('peer', () => {
    * Send a message to a specific peer (host → client)
    */
   const sendToPeer = (peerId: string, message: import('./types/peer').HostToClientMessage): void => {
-    const peer = peers.value.get(peerId)
+    const peer = toRaw(peers.value.get(peerId))
     if (!peer || peer.isMock) return
     try {
       peer.connection?.send(message)
@@ -110,7 +110,7 @@ export const usePeerStore = defineStore('peer', () => {
     for (const peer of connectedPeers.value) {
       if (!peer.isMock) {
         try {
-          peer.connection?.send(message)
+          toRaw(peer).connection?.send(message)
         } catch (e) {
           console.warn(`[peerStore] Failed to broadcast to ${peer.id}:`, e)
         }
@@ -118,10 +118,28 @@ export const usePeerStore = defineStore('peer', () => {
     }
   }
 
-  const setPeerLayout = (peerId: string, layout: import('./types/peer').LayoutName): void => {
+  // Capabilities that are automatically driven by layout selection
+  const LAYOUT_CAPS: Record<LayoutName, CapabilityType | null> = {
+    empty:    null,
+    keyboard: CT.KEYBOARD,
+    canvas:   CT.DRAW,
+    touchpad: CT.TOUCHPAD
+  }
+  const LAYOUT_ONLY_CAPS = new Set<CapabilityType>([CT.KEYBOARD, CT.DRAW, CT.TOUCHPAD])
+
+  const setPeerLayout = (peerId: string, layout: LayoutName): void => {
     const peer = peers.value.get(peerId)
     if (!peer) return
-    peer.currentLayout = layout
+
+    // Reactively replace the peer object so Vue triggers re-render
+    peers.value.set(peerId, { ...toRaw(peer), currentLayout: layout })
+
+    // Auto-enable the layout-specific capability, disable the others
+    const targetCap = LAYOUT_CAPS[layout]
+    for (const cap of LAYOUT_ONLY_CAPS) {
+      setCapabilityEnabled(peerId, cap, cap === targetCap)
+    }
+
     sendToPeer(peerId, { type: 'layout', layout })
   }
 

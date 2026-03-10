@@ -1,6 +1,6 @@
 import { BaseNode } from '../BaseNode'
 import { DataType, NodeCategory, type NodeMetadata } from '../types'
-import type { PeerCapability, CapabilityType, HostToClientMessage, LayoutName } from '../../stores/types/peer'
+import type { CapabilityType, HostToClientMessage, LayoutName } from '../../stores/types/peer'
 import { usePeerStore } from '../../stores/peerStore'
 import { createThrottledCanvasSender } from '../../utils/canvasSerial'
 
@@ -10,7 +10,6 @@ import { createThrottledCanvasSender } from '../../utils/canvasSerial'
  */
 export class PeerNode extends BaseNode {
   private peerId: string | null = null
-  private enabledCapabilities: Set<CapabilityType> = new Set()
   private peerStore = usePeerStore()
 
   // Output channels: which input ports (host→peer) are enabled
@@ -62,74 +61,72 @@ export class PeerNode extends BaseNode {
   }
 
   /**
-   * Configure which capabilities should be exposed as ports
+   * Configure capabilities — kept for backward compat, just refreshes ports
    */
-  configureCapabilities(capabilities: CapabilityType[]): void {
-    this.enabledCapabilities = new Set(capabilities)
-    this.updatePorts()
+  configureCapabilities(_capabilities: CapabilityType[]): void {
+    this.refreshPorts()
   }
 
   /**
-   * Get enabled capabilities (for serialization)
+   * Get enabled capabilities from peerStore (for serialization compat)
    */
   getEnabledCapabilities(): CapabilityType[] {
-    return Array.from(this.enabledCapabilities)
+    if (!this.peerId) return []
+    const peer = this.peerStore.getPeer(this.peerId)
+    return peer ? peer.capabilities.filter(c => c.enabled).map(c => c.type) : []
   }
 
   /**
-   * Enable a specific capability
+   * Enable a capability via peerStore
    */
   enableCapability(capabilityType: CapabilityType): void {
-    this.enabledCapabilities.add(capabilityType)
-    this.updatePorts()
-    
-    // Update peer store
-    if (this.peerId) {
-      this.peerStore.setCapabilityEnabled(this.peerId, capabilityType, true)
-    }
+    if (this.peerId) this.peerStore.setCapabilityEnabled(this.peerId, capabilityType, true)
+    this.refreshPorts()
   }
 
   /**
-   * Disable a specific capability
+   * Disable a capability via peerStore
    */
   disableCapability(capabilityType: CapabilityType): void {
-    this.enabledCapabilities.delete(capabilityType)
-    this.updatePorts()
-    
-    // Update peer store
-    if (this.peerId) {
-      this.peerStore.setCapabilityEnabled(this.peerId, capabilityType, false)
-    }
+    if (this.peerId) this.peerStore.setCapabilityEnabled(this.peerId, capabilityType, false)
+    this.refreshPorts()
   }
 
   /**
-   * Update ports based on peer capabilities
+   * Refresh ports to match peerStore capability enabled states (public, called from graphStore)
+   */
+  refreshPorts(): void {
+    this.updatePorts()
+  }
+
+  /**
+   * Incrementally sync output ports with peerStore capability enabled states.
+   * Preserves existing port IDs to avoid breaking Vue Flow edges.
    */
   private updatePorts(): void {
     if (!this.peerId) return
-
     const peer = this.peerStore.getPeer(this.peerId)
     if (!peer) return
 
-    // Clear existing outputs only (keep inputs if any)
-    this.outputs.clear()
-
-    // Create output ports for each enabled capability
-    for (const capability of peer.capabilities) {
-      if (this.enabledCapabilities.has(capability.type)) {
-        this.addCapabilityPorts(capability)
+    // Remove ports whose capability is now disabled
+    for (const [id, port] of this.outputs.entries()) {
+      const capType = port.name.split('.')[0]
+      const cap = peer.capabilities.find(c => c.type === capType)
+      if (!cap || !cap.enabled) {
+        this.outputs.delete(id)
       }
     }
-  }
 
-  /**
-   * Add ports for a specific capability
-   */
-  private addCapabilityPorts(capability: PeerCapability): void {
-    for (const port of capability.ports) {
-      const portName = `${capability.type}.${port.name}`
-      const dataType = this.mapDataType(port.dataType)
-      this.addOutput(portName, dataType)
+    // Add ports for enabled capabilities that aren't represented yet
+    for (const capability of peer.capabilities) {
+      if (!capability.enabled) continue
+      for (const portDef of capability.ports) {
+        const portName = `${capability.type}.${portDef.name}`
+        const exists = Array.from(this.outputs.values()).some(p => p.name === portName)
+        if (!exists) {
+          this.addOutput(portName, this.mapDataType(portDef.dataType))
+        }
+      }
     }
   }
 
@@ -166,7 +163,7 @@ export class PeerNode extends BaseNode {
 
     // --- Read from peer (output ports) ---
     for (const capability of peer.capabilities) {
-      if (capability.enabled && this.enabledCapabilities.has(capability.type)) {
+      if (capability.enabled) {
         const data = this.peerStore.getPeerData(this.peerId, capability.type)
         if (data) {
           for (const port of capability.ports) {
@@ -285,14 +282,12 @@ export class PeerNode extends BaseNode {
     return {
       ...super.toJSON(),
       peerId: this.peerId,
-      enabledCapabilities: Array.from(this.enabledCapabilities),
       enabledOutputChannels: Array.from(this.enabledOutputChannels)
     }
   }
 
   fromJSON(data: any): void {
     if (data.peerId) this.setPeer(data.peerId)
-    if (data.enabledCapabilities) this.configureCapabilities(data.enabledCapabilities)
     if (data.enabledOutputChannels) {
       for (const ch of data.enabledOutputChannels) this.enableOutputChannel(ch)
     }

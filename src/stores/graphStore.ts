@@ -214,6 +214,17 @@ export const useGraphStore = defineStore('graph', () => {
     }
   }
 
+  function syncPeerNodePorts(peerId: string): void {
+    for (const [nodeId, node] of nodeInstances.value.entries()) {
+      if (node.type === 'peer' && typeof (node as any).getPeerId === 'function') {
+        if ((node as any).getPeerId() === peerId) {
+          ;(node as any).refreshPorts?.()
+          updateNodePorts(nodeId)
+        }
+      }
+    }
+  }
+
   /**
    * Clear entire graph
    */
@@ -414,6 +425,7 @@ export const useGraphStore = defineStore('graph', () => {
     updateNodePosition,
     selectNode,
     updateNodePorts,
+    syncPeerNodePorts,
     toggleNodePreview,
     isPreviewEnabled,
     clear,
