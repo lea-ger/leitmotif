@@ -11,7 +11,6 @@ export default defineConfig({
     basicSsl(),
   ],
   server: {
-    https: true,
     allowedHosts: ['localhost', 'exploratively-older-tressa.ngrok-free.dev'],
   }
 })

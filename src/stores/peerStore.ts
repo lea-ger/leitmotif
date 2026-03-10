@@ -91,6 +91,34 @@ export const usePeerStore = defineStore('peer', () => {
   }
 
   /**
+   * Send a message to a specific peer (host → client)
+   */
+  const sendToPeer = (peerId: string, message: import('./types/peer').HostToClientMessage): void => {
+    const peer = peers.value.get(peerId)
+    if (!peer || peer.isMock) return
+    try {
+      peer.connection?.send(message)
+    } catch (e) {
+      console.warn(`[peerStore] Failed to send to ${peerId}:`, e)
+    }
+  }
+
+  /**
+   * Broadcast a message to all connected (non-mock) peers
+   */
+  const sendToAllPeers = (message: import('./types/peer').HostToClientMessage): void => {
+    for (const peer of connectedPeers.value) {
+      if (!peer.isMock) {
+        try {
+          peer.connection?.send(message)
+        } catch (e) {
+          console.warn(`[peerStore] Failed to broadcast to ${peer.id}:`, e)
+        }
+      }
+    }
+  }
+
+  /**
    * Update data from a peer for a specific capability
    */
   const updatePeerData = (peerId: string, capabilityType: string, data: any) => {
@@ -313,6 +341,8 @@ export const usePeerStore = defineStore('peer', () => {
     clearAll,
     addMockPeer,
     removeMockPeer,
+    sendToPeer,
+    sendToAllPeers,
     saveToStorage,
     loadFromStorage
   }

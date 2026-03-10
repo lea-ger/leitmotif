@@ -251,7 +251,8 @@ export const useGraphStore = defineStore('graph', () => {
           if (node.type === 'peer' && typeof (node as any).getPeerId === 'function') {
             peerConfig = {
               peerId: (node as any).getPeerId(),
-              enabledCapabilities: (node as any).getEnabledCapabilities?.() || []
+              enabledCapabilities: (node as any).getEnabledCapabilities?.() || [],
+              enabledOutputChannels: (node as any).getEnabledOutputChannels?.() || []
             }
           }
 
@@ -327,6 +328,11 @@ export const useGraphStore = defineStore('graph', () => {
           }
           if (nodeData.peerConfig.enabledCapabilities && typeof peerNode.configureCapabilities === 'function') {
             peerNode.configureCapabilities(nodeData.peerConfig.enabledCapabilities)
+          }
+          if (nodeData.peerConfig.enabledOutputChannels && typeof peerNode.enableOutputChannel === 'function') {
+            for (const ch of nodeData.peerConfig.enabledOutputChannels) {
+              peerNode.enableOutputChannel(ch)
+            }
           }
         }
 

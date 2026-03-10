@@ -78,7 +78,7 @@ function drawWaveform(ctx: CanvasRenderingContext2D) {
   ctx.beginPath()
   for (let i = 0; i < samples.length; i++) {
     const x = (i / (samples.length - 1)) * WIDTH
-    const y = ((1 - samples[i]) / 2) * HEIGHT
+    const y = ((1 - (samples[i] ?? 0)) / 2) * HEIGHT
     if (i === 0) ctx.moveTo(x, y)
     else ctx.lineTo(x, y)
   }

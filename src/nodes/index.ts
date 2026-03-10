@@ -19,6 +19,7 @@ export * from './processor/IfNode'
 // Output nodes
 export * from './output/AudioOutputNode'
 export * from './output/CanvasOutputNode'
+export * from './output/AllPeersOutputNode'
 
 // Utility nodes
 export * from './utility/DebugNode'
@@ -36,6 +37,7 @@ import { ExpressionNode } from './processor/ExpressionNode'
 import { IfNode } from './processor/IfNode'
 import { AudioOutputNode } from './output/AudioOutputNode'
 import { CanvasOutputNode } from './output/CanvasOutputNode'
+import { AllPeersOutputNode } from './output/AllPeersOutputNode'
 import { DebugNode } from './utility/DebugNode'
 
 // Register all nodes
@@ -51,5 +53,6 @@ export function registerAllNodes(): void {
   NodeRegistry.register(IfNode)
   NodeRegistry.register(AudioOutputNode)
   NodeRegistry.register(CanvasOutputNode)
+  NodeRegistry.register(AllPeersOutputNode)
   NodeRegistry.register(DebugNode)
 }

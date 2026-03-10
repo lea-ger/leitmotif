@@ -210,21 +210,55 @@ export const useSessionStore = defineStore('session', () => {
     conn.on('data', (payload: unknown) => {
       const data = payload as Record<string, any>
 
-      // Client sends { type: 'hello' } on connect and sensor packets
       if (!data || data.type === 'hello') return
 
-      // Sensor data: { ax, ay, az, alpha, beta, gamma }
-      if ('ax' in data || 'alpha' in data) {
-        if ('ax' in data) {
+      // Legacy & new typed message dispatch
+      switch (data.type) {
+        case 'sensors':
           peerStore.updatePeerData(clientPeerId, 'accelerometer', {
             x: data.ax, y: data.ay, z: data.az
           })
-        }
-        if ('alpha' in data) {
           peerStore.updatePeerData(clientPeerId, 'gyro', {
             alpha: data.alpha, beta: data.beta, gamma: data.gamma
           })
-        }
+          break
+
+        case 'keydown':
+          peerStore.updatePeerData(clientPeerId, 'keyboard', {
+            note: data.note, frequency: data.frequency, velocity: data.velocity, state: 'down'
+          })
+          break
+
+        case 'keyup':
+          peerStore.updatePeerData(clientPeerId, 'keyboard', {
+            note: data.note, frequency: data.frequency ?? 0, velocity: 0, state: 'up'
+          })
+          break
+
+        case 'draw':
+          peerStore.updatePeerData(clientPeerId, 'draw', {
+            x: data.x, y: data.y, pressure: data.pressure, phase: data.phase
+          })
+          break
+
+        case 'touchpad':
+          peerStore.updatePeerData(clientPeerId, 'touchpad', {
+            x: data.x, y: data.y, force: data.force, active: data.active
+          })
+          break
+
+        default:
+          // Legacy flat sensor packet: { ax, ay, az, alpha, beta, gamma }
+          if ('ax' in data) {
+            peerStore.updatePeerData(clientPeerId, 'accelerometer', {
+              x: data.ax, y: data.ay, z: data.az
+            })
+          }
+          if ('alpha' in data) {
+            peerStore.updatePeerData(clientPeerId, 'gyro', {
+              alpha: data.alpha, beta: data.beta, gamma: data.gamma
+            })
+          }
       }
     })
 
