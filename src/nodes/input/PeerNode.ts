@@ -12,8 +12,6 @@ export class PeerNode extends BaseNode {
   private peerId: string | null = null
   private peerStore = usePeerStore()
 
-  // Output channels: which input ports (host→peer) are enabled
-  private enabledOutputChannels: Set<string> = new Set()
   private canvasSender = createThrottledCanvasSender(15)
   // Track last sent values to avoid redundant sends
   private lastSentHaptic: string = ''
@@ -128,6 +126,12 @@ export class PeerNode extends BaseNode {
         }
       }
     }
+
+    // Host -> client control/data channels are explicit input ports on every PeerNode.
+    this.addOutputChannelPort('out.canvas')
+    this.addOutputChannelPort('out.haptic')
+    this.addOutputChannelPort('out.audioTrigger')
+    this.addOutputChannelPort('out.layout')
   }
 
   /**
@@ -183,88 +187,82 @@ export class PeerNode extends BaseNode {
     if (!this.peerId) return
 
     // Canvas channel
-    if (this.enabledOutputChannels.has('out.canvas')) {
-      const canvas = this.getInputValue('out.canvas') as OffscreenCanvas | null
-      if (canvas) {
-        this.canvasSender(canvas, ({ buffer, width, height }) => {
-          const msg: HostToClientMessage = { type: 'canvas', buffer, width, height }
-          this.peerStore.sendToPeer(this.peerId!, msg)
-        })
-      }
+    const canvas = this.getInputValue('out.canvas') as OffscreenCanvas | null
+    if (canvas) {
+      this.canvasSender(canvas, ({ buffer, width, height }) => {
+        const msg: HostToClientMessage = { type: 'canvas', buffer, width, height }
+        this.peerStore.sendToPeer(this.peerId!, msg)
+      })
     }
 
     // Haptic channel — only send when value changes
-    if (this.enabledOutputChannels.has('out.haptic')) {
-      const pattern = this.getInputValue('out.haptic')
-      if (pattern !== null && pattern !== undefined) {
-        const serialized = JSON.stringify(pattern)
-        if (serialized !== this.lastSentHaptic) {
-          this.lastSentHaptic = serialized
-          const p = Array.isArray(pattern) ? pattern : [100]
-          this.peerStore.sendToPeer(this.peerId!, { type: 'haptic', pattern: p })
-        }
+    const pattern = this.getInputValue('out.haptic')
+    if (pattern !== null && pattern !== undefined) {
+      const serialized = JSON.stringify(pattern)
+      if (serialized !== this.lastSentHaptic) {
+        this.lastSentHaptic = serialized
+        const p = Array.isArray(pattern) ? pattern : [100]
+        this.peerStore.sendToPeer(this.peerId!, { type: 'haptic', pattern: p })
       }
     }
 
     // Audio trigger channel
-    if (this.enabledOutputChannels.has('out.audioTrigger')) {
-      const trig = this.getInputValue('out.audioTrigger') as Record<string, any> | null
-      if (trig !== null && trig !== undefined) {
-        const serialized = JSON.stringify(trig)
-        if (serialized !== this.lastSentAudio) {
-          this.lastSentAudio = serialized
-          this.peerStore.sendToPeer(this.peerId!, {
-            type: 'audioTrigger',
-            frequency: trig.frequency ?? 440,
-            duration: trig.duration ?? 0.5,
-            volume: trig.volume ?? 0.5,
-            waveform: trig.waveform ?? 'sine'
-          })
-        }
+    const trig = this.getInputValue('out.audioTrigger') as Record<string, any> | null
+    if (trig !== null && trig !== undefined) {
+      const serialized = JSON.stringify(trig)
+      if (serialized !== this.lastSentAudio) {
+        this.lastSentAudio = serialized
+        this.peerStore.sendToPeer(this.peerId!, {
+          type: 'audioTrigger',
+          frequency: trig.frequency ?? 440,
+          duration: trig.duration ?? 0.5,
+          volume: trig.volume ?? 0.5,
+          waveform: trig.waveform ?? 'sine'
+        })
       }
     }
 
     // Layout channel
-    if (this.enabledOutputChannels.has('out.layout')) {
-      const layout = this.getInputValue('out.layout') as LayoutName | null
-      if (layout && layout !== this.lastSentLayout) {
-        this.lastSentLayout = layout
-        this.peerStore.sendToPeer(this.peerId!, { type: 'layout', layout })
-      }
+    const layout = this.getInputValue('out.layout') as LayoutName | null
+    if (layout && layout !== this.lastSentLayout) {
+      this.lastSentLayout = layout
+      this.peerStore.sendToPeer(this.peerId!, { type: 'layout', layout })
     }
   }
 
+  private getInputPortIdByName(name: string): string | null {
+    const pair = Array.from(this.inputs.entries()).find(([, p]) => p.name === name)
+    return pair ? pair[0] : null
+  }
+
   /**
-   * Enable an output channel (creates an input port)
+   * Backward-compatible API: keep methods used by graph restore, but ports are explicit now.
    */
   enableOutputChannel(channel: string): void {
-    if (this.enabledOutputChannels.has(channel)) return
-    this.enabledOutputChannels.add(channel)
     this.addOutputChannelPort(channel)
   }
 
   /**
-   * Disable an output channel (removes its input port)
+   * Backward-compatible API.
    */
   disableOutputChannel(channel: string): void {
-    this.enabledOutputChannels.delete(channel)
-    const portToRemove = Array.from(this.inputs.entries()).find(([, p]) => p.name === channel)
-    if (portToRemove) this.inputs.delete(portToRemove[0])
+    const id = this.getInputPortIdByName(channel)
+    if (id) this.inputs.delete(id)
   }
 
   /**
-   * Toggle an output channel
+   * Backward-compatible API.
    */
   toggleOutputChannel(channel: string): void {
-    if (this.enabledOutputChannels.has(channel)) {
-      this.disableOutputChannel(channel)
-    } else {
-      this.enableOutputChannel(channel)
-    }
+    const id = this.getInputPortIdByName(channel)
+    if (id) this.inputs.delete(id)
+    else this.addOutputChannelPort(channel)
   }
 
   getEnabledOutputChannels(): string[] {
-    return Array.from(this.enabledOutputChannels)
+    return Array.from(this.inputs.values())
+      .map(p => p.name)
+      .filter(n => n.startsWith('out.'))
   }
 
   private addOutputChannelPort(channel: string): void {
@@ -275,14 +273,16 @@ export class PeerNode extends BaseNode {
       'out.layout':       DataType.OBJECT
     }
     const dataType = typeMap[channel] ?? DataType.ANY
-    this.addInput(channel, dataType)
+    if (!this.getInputPortIdByName(channel)) {
+      this.addInput(channel, dataType)
+    }
   }
 
   toJSON() {
     return {
       ...super.toJSON(),
       peerId: this.peerId,
-      enabledOutputChannels: Array.from(this.enabledOutputChannels)
+      enabledOutputChannels: this.getEnabledOutputChannels()
     }
   }
 
