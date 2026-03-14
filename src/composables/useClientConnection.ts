@@ -1,5 +1,5 @@
 import { ref, readonly } from 'vue'
-import Peer, { type DataConnection } from 'peerjs'
+import Peer, { type DataConnection, type MediaConnection } from 'peerjs'
 import { PEER_OPTIONS } from '../utils/peerConfig'
 import type { ClientToHostMessage, HostToClientMessage, LayoutName } from '../stores/types/peer'
 import { bufferToImageBitmap } from '../utils/canvasSerial'
@@ -25,6 +25,8 @@ export function useClientConnection() {
 
   let peer: Peer | null = null
   let conn: DataConnection | null = null
+  let mediaCall: MediaConnection | null = null
+  let remoteAudioEl: HTMLAudioElement | null = null
   let sendTimer: number | null = null
 
   // Sensor values (still sent every 20ms)
@@ -147,6 +149,42 @@ export function useClientConnection() {
     const p = new Peer(PEER_OPTIONS)
     peer = p
 
+    p.on('call', (call: MediaConnection) => {
+      try {
+        call.answer()
+      } catch (e) {
+        console.warn('[client] Failed to answer media call:', e)
+        return
+      }
+
+      mediaCall = call
+
+      call.on('stream', (stream: MediaStream) => {
+        if (!remoteAudioEl) {
+          remoteAudioEl = document.createElement('audio')
+          remoteAudioEl.autoplay = true
+          remoteAudioEl.setAttribute('playsinline', 'true')
+          remoteAudioEl.style.display = 'none'
+          document.body.appendChild(remoteAudioEl)
+        }
+        remoteAudioEl.srcObject = stream
+        remoteAudioEl.play().catch(err => {
+          console.warn('[client] Remote audio autoplay blocked:', err)
+        })
+      })
+
+      call.on('close', () => {
+        mediaCall = null
+        if (remoteAudioEl) {
+          remoteAudioEl.srcObject = null
+        }
+      })
+
+      call.on('error', (err) => {
+        console.warn('[client] Media call error:', err)
+      })
+    })
+
     p.on('open', () => {
       const c = p.connect(roomId)
       conn = c
@@ -184,6 +222,15 @@ export function useClientConnection() {
 
   function disconnect() {
     stopSensors()
+    if (mediaCall) {
+      try { mediaCall.close() } catch {}
+      mediaCall = null
+    }
+    if (remoteAudioEl) {
+      remoteAudioEl.srcObject = null
+      remoteAudioEl.remove()
+      remoteAudioEl = null
+    }
     conn?.close(); conn = null
     peer?.disconnect(); peer?.destroy(); peer = null
     isConnected.value = false

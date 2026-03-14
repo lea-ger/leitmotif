@@ -3,10 +3,20 @@ import { ref, computed, toRaw } from 'vue'
 import type { PeerMetadata, PeerDataPayload, PeerCapability, CapabilityType, LayoutName } from './types/peer'
 import { DEFAULT_CAPABILITIES, CapabilityType as CT } from './types/peer'
 import * as storage from '../utils/storage'
+import Peer, { type MediaConnection } from 'peerjs'
+import * as Tone from 'tone'
 
 export const usePeerStore = defineStore('peer', () => {
   const peers = ref<Map<string, PeerMetadata>>(new Map())
   const dataStreams = ref<Map<string, Map<string, any>>>(new Map()) // peerId -> capabilityType -> latest data
+  let hostPeer: Peer | null = null
+
+  type PeerAudioState = {
+    source: Tone.ToneAudioNode | null
+    destination: MediaStreamAudioDestinationNode | null
+    call: MediaConnection | null
+  }
+  const peerAudioStates = new Map<string, PeerAudioState>()
 
   /**
    * Get all connected peers
@@ -37,6 +47,7 @@ export const usePeerStore = defineStore('peer', () => {
     if (!dataStreams.value.has(peer.id)) {
       dataStreams.value.set(peer.id, new Map())
     }
+    ensurePeerAudioCall(peer.id)
     saveToStorage().catch(e => console.error('Failed to save after addPeer:', e))
   }
 
@@ -44,6 +55,7 @@ export const usePeerStore = defineStore('peer', () => {
    * Remove a peer
    */
   const removePeer = (peerId: string) => {
+    stopPeerAudio(peerId)
     peers.value.delete(peerId)
     dataStreams.value.delete(peerId)
     saveToStorage().catch(e => console.error('Failed to save after removePeer:', e))
@@ -57,7 +69,106 @@ export const usePeerStore = defineStore('peer', () => {
     if (peer) {
       peer.connected = connected
       peer.lastSeen = new Date()
+      if (!connected) stopPeerAudio(peerId)
+      else ensurePeerAudioCall(peerId)
     }
+  }
+
+  const setHostPeer = (peer: Peer | null): void => {
+    hostPeer = peer
+    if (!hostPeer) {
+      for (const peerId of peerAudioStates.keys()) stopPeerAudio(peerId)
+      return
+    }
+    for (const peerId of peers.value.keys()) ensurePeerAudioCall(peerId)
+  }
+
+  const setPeerAudioSource = (peerId: string, source: Tone.ToneAudioNode | null): void => {
+    const state = peerAudioStates.get(peerId) ?? { source: null, destination: null, call: null }
+    if (state.source === source) return
+
+    // Disconnect prior source from destination
+    if (state.source && state.destination) {
+      try { state.source.disconnect(state.destination) } catch {}
+    }
+
+    state.source = source
+    if (!source) {
+      if (state.call) {
+        try { state.call.close() } catch {}
+        state.call = null
+      }
+      peerAudioStates.set(peerId, state)
+      return
+    }
+
+    ensurePeerAudioCall(peerId)
+  }
+
+  const ensurePeerAudioCall = (peerId: string): void => {
+    const peerMeta = toRaw(peers.value.get(peerId))
+    if (!peerMeta || !peerMeta.connected || peerMeta.isMock || !hostPeer) return
+
+    const state = peerAudioStates.get(peerId) ?? { source: null, destination: null, call: null }
+    if (!state.source) return
+
+    if (!state.destination) {
+      const raw = Tone.getContext().rawContext as AudioContext
+      state.destination = raw.createMediaStreamDestination()
+    }
+
+    try {
+      state.source.disconnect(state.destination)
+    } catch {}
+    try {
+      state.source.connect(state.destination)
+    } catch (e) {
+      console.warn(`[peerStore] Failed to connect audio source for ${peerId}:`, e)
+      peerAudioStates.set(peerId, state)
+      return
+    }
+
+    if (state.call) {
+      const open = (state.call as any).open
+      if (open !== false) {
+        peerAudioStates.set(peerId, state)
+        return
+      }
+      try { state.call.close() } catch {}
+      state.call = null
+    }
+
+    try {
+      state.call = hostPeer.call(peerId, state.destination.stream, {
+        metadata: { type: 'host-audio' }
+      })
+      state.call.on('close', () => {
+        const latest = peerAudioStates.get(peerId)
+        if (latest) latest.call = null
+      })
+      state.call.on('error', (err) => {
+        console.warn(`[peerStore] Audio call error for ${peerId}:`, err)
+      })
+    } catch (e) {
+      console.warn(`[peerStore] Failed to start audio call for ${peerId}:`, e)
+    }
+
+    peerAudioStates.set(peerId, state)
+  }
+
+  const stopPeerAudio = (peerId: string): void => {
+    const state = peerAudioStates.get(peerId)
+    if (!state) return
+
+    if (state.call) {
+      try { state.call.close() } catch {}
+      state.call = null
+    }
+    if (state.source && state.destination) {
+      try { state.source.disconnect(state.destination) } catch {}
+    }
+    state.source = null
+    peerAudioStates.delete(peerId)
   }
 
   /**
@@ -197,6 +308,7 @@ export const usePeerStore = defineStore('peer', () => {
    * Clear all peers and data
    */
   const clearAll = () => {
+    for (const peerId of peerAudioStates.keys()) stopPeerAudio(peerId)
     peers.value.clear()
     dataStreams.value.clear()
     saveToStorage().catch(e => console.error('Failed to clear peer storage:', e))
@@ -369,6 +481,8 @@ export const usePeerStore = defineStore('peer', () => {
     sendToPeer,
     sendToAllPeers,
     setPeerLayout,
+    setHostPeer,
+    setPeerAudioSource,
     saveToStorage,
     loadFromStorage
   }

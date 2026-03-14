@@ -150,9 +150,11 @@ export const useSessionStore = defineStore('session', () => {
     stopHost() // clean up any previous instance
 
     hostStatus.value = 'connecting'
+    const peerStore = usePeerStore()
 
     const peer = new Peer(key, PEER_OPTIONS)
     hostPeer = peer
+    peerStore.setHostPeer(peer)
 
     peer.on('open', (id) => {
       console.log('[Host] PeerJS ready, listening on', id)
@@ -178,6 +180,8 @@ export const useSessionStore = defineStore('session', () => {
   }
 
   function stopHost() {
+    const peerStore = usePeerStore()
+    peerStore.setHostPeer(null)
     if (hostPeer) {
       hostPeer.destroy()
       hostPeer = null

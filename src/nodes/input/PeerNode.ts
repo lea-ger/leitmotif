@@ -3,6 +3,7 @@ import { DataType, NodeCategory, type NodeMetadata } from '../types'
 import type { CapabilityType, HostToClientMessage, LayoutName } from '../../stores/types/peer'
 import { usePeerStore } from '../../stores/peerStore'
 import { createThrottledCanvasSender } from '../../utils/canvasSerial'
+import * as Tone from 'tone'
 
 /**
  * Generic Peer Node
@@ -38,6 +39,7 @@ export class PeerNode extends BaseNode {
     // Host -> peer controls
     this.addInput('out.canvas', DataType.CANVAS)
     this.addInput('out.haptic', DataType.EVENT)
+    this.addInput('out.audio', DataType.AUDIO)
     this.addInput('out.audioTrigger', DataType.OBJECT)
 
     // Node-level settings for simpler UX
@@ -218,6 +220,14 @@ export class PeerNode extends BaseNode {
   private processOutputChannels(): void {
     if (!this.peerId) return
 
+    // Direct audio stream channel (WebRTC media call)
+    const audioSource = this.getInputValue('out.audio')
+    if (audioSource instanceof Tone.ToneAudioNode) {
+      this.peerStore.setPeerAudioSource(this.peerId!, audioSource)
+    } else {
+      this.peerStore.setPeerAudioSource(this.peerId!, null)
+    }
+
     // Canvas channel
     const canvas = this.getInputValue('out.canvas') as OffscreenCanvas | null
     if (canvas) {
@@ -321,6 +331,7 @@ export class PeerNode extends BaseNode {
     const typeMap: Record<string, DataType> = {
       'out.canvas':       DataType.CANVAS,
       'out.haptic':       DataType.EVENT,
+      'out.audio':        DataType.AUDIO,
       'out.audioTrigger': DataType.OBJECT
     }
     const dataType = typeMap[channel]
@@ -342,6 +353,12 @@ export class PeerNode extends BaseNode {
     if (data.peerId) this.setPeer(data.peerId)
     if (data.enabledOutputChannels) {
       for (const ch of data.enabledOutputChannels) this.enableOutputChannel(ch)
+    }
+  }
+
+  cleanup(): void {
+    if (this.peerId) {
+      this.peerStore.setPeerAudioSource(this.peerId, null)
     }
   }
 }
