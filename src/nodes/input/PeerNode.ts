@@ -35,7 +35,37 @@ export class PeerNode extends BaseNode {
   }
 
   initialize(): void {
-    // Ports are dynamically created when peer is assigned
+    // Host -> peer controls
+    this.addInput('out.canvas', DataType.CANVAS)
+    this.addInput('out.haptic', DataType.EVENT)
+    this.addInput('out.audioTrigger', DataType.OBJECT)
+
+    // Node-level settings for simpler UX
+    this.addParameter({
+      id: 'layout',
+      name: 'Client Layout',
+      type: 'select',
+      defaultValue: 'empty',
+      options: [
+        { label: 'Default', value: 'empty' },
+        { label: 'Keyboard', value: 'keyboard' },
+        { label: 'Canvas', value: 'canvas' },
+        { label: 'Touchpad', value: 'touchpad' }
+      ]
+    })
+    this.addParameter({
+      id: 'hapticPattern',
+      name: 'Haptic Pattern',
+      type: 'select',
+      defaultValue: 'short',
+      options: [
+        { label: 'Short', value: 'short' },
+        { label: 'Medium', value: 'medium' },
+        { label: 'Long', value: 'long' },
+        { label: 'Double', value: 'double' },
+        { label: 'Pulse', value: 'pulse' }
+      ]
+    })
   }
 
   /**
@@ -47,6 +77,9 @@ export class PeerNode extends BaseNode {
     
     if (peer) {
       this.name = `Peer: ${peer.name}`
+      if (peer.currentLayout) {
+        this.setParameter('layout', peer.currentLayout)
+      }
       this.updatePorts()
     }
   }
@@ -131,7 +164,6 @@ export class PeerNode extends BaseNode {
     this.addOutputChannelPort('out.canvas')
     this.addOutputChannelPort('out.haptic')
     this.addOutputChannelPort('out.audioTrigger')
-    this.addOutputChannelPort('out.layout')
   }
 
   /**
@@ -195,15 +227,19 @@ export class PeerNode extends BaseNode {
       })
     }
 
-    // Haptic channel — only send when value changes
-    const pattern = this.getInputValue('out.haptic')
-    if (pattern !== null && pattern !== undefined) {
-      const serialized = JSON.stringify(pattern)
+    // Haptic channel (event trigger): emits selected pattern on trigger edges.
+    const hapticEvent = this.getInputValue('out.haptic')
+    if (hapticEvent !== null && hapticEvent !== undefined) {
+      const serialized = JSON.stringify(hapticEvent)
       if (serialized !== this.lastSentHaptic) {
         this.lastSentHaptic = serialized
-        const p = Array.isArray(pattern) ? pattern : [100]
-        this.peerStore.sendToPeer(this.peerId!, { type: 'haptic', pattern: p })
+        const patternKey = String(this.getParameter('hapticPattern') ?? 'short')
+        const pattern = this.resolveHapticPattern(patternKey)
+        this.peerStore.sendToPeer(this.peerId!, { type: 'haptic', pattern })
       }
+    } else {
+      // Reset edge detector when signal is inactive
+      this.lastSentHaptic = ''
     }
 
     // Audio trigger channel
@@ -222,11 +258,27 @@ export class PeerNode extends BaseNode {
       }
     }
 
-    // Layout channel
-    const layout = this.getInputValue('out.layout') as LayoutName | null
+    // Layout comes from node setting (simpler for non-coders)
+    const layout = this.getParameter('layout') as LayoutName
     if (layout && layout !== this.lastSentLayout) {
       this.lastSentLayout = layout
       this.peerStore.sendToPeer(this.peerId!, { type: 'layout', layout })
+    }
+  }
+
+  private resolveHapticPattern(key: string): number[] {
+    switch (key) {
+      case 'medium':
+        return [120]
+      case 'long':
+        return [220]
+      case 'double':
+        return [80, 60, 80]
+      case 'pulse':
+        return [30, 40, 30, 40, 30]
+      case 'short':
+      default:
+        return [60]
     }
   }
 
@@ -268,11 +320,11 @@ export class PeerNode extends BaseNode {
   private addOutputChannelPort(channel: string): void {
     const typeMap: Record<string, DataType> = {
       'out.canvas':       DataType.CANVAS,
-      'out.haptic':       DataType.OBJECT,
-      'out.audioTrigger': DataType.OBJECT,
-      'out.layout':       DataType.OBJECT
+      'out.haptic':       DataType.EVENT,
+      'out.audioTrigger': DataType.OBJECT
     }
-    const dataType = typeMap[channel] ?? DataType.ANY
+    const dataType = typeMap[channel]
+    if (!dataType) return
     if (!this.getInputPortIdByName(channel)) {
       this.addInput(channel, dataType)
     }
