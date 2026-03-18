@@ -5,17 +5,14 @@
       <ul class="menu menu-horizontal rounded-box">
         <li>
           <details>
-            <summary>Menu</summary>
-            <ul>
-              <li><a>Submenu 1</a></li>
-              <li><a>Submenu 2</a></li>
+            <summary>Examples</summary>
+            <ul class="z-10">
+              <li v-for="demo in DEMO_WORKFLOWS" :key="demo.id">
+                <a @click="loadDemo(demo)">{{ demo.name }}</a>
+              </li>
             </ul>
           </details>
         </li>
-        <li>
-          <a>Tutorial</a>
-        </li>
-        <li><a>Wiki</a></li>
       </ul>
 
       <div class="flex-1"/>
@@ -126,7 +123,7 @@
               />
             </template>
             <template #edge-default="edgeProps">
-              <CustomEdge v-bind="edgeProps" />
+              <CustomEdge v-bind="edgeProps"/>
             </template>
           </VueFlow>
         </div>
@@ -150,7 +147,7 @@
     />
 
     <!-- Canvas Output Window (always mounted, peeks from bottom-left) -->
-    <CanvasOutputWindow />
+    <CanvasOutputWindow/>
 
     <!-- QR Code Modal -->
     <QRCodeModal ref="qrModalRef"/>
@@ -207,6 +204,7 @@ import NodeLibraryModal from "../components/NodeLibraryModal.vue";
 import NodeSettingsPanel from "../components/NodeSettingsPanel.vue";
 import CanvasOutputWindow from "../components/CanvasOutputWindow.vue";
 import {NodeRegistry} from '../nodes/NodeRegistry';
+import {DEMO_WORKFLOWS} from '../data/demoWorkflows'
 
 // Register all node types
 registerAllNodes()
@@ -237,9 +235,12 @@ const {project, applyNodeChanges} = useVueFlow()
 
 // Debounced auto-save: waits 600ms after last change before writing to IndexedDB
 let saveTimer: ReturnType<typeof setTimeout> | null = null
+
 function scheduleSave() {
   if (saveTimer) clearTimeout(saveTimer)
-  saveTimer = setTimeout(() => { graphStore.saveToStorage() }, 600)
+  saveTimer = setTimeout(() => {
+    graphStore.saveToStorage()
+  }, 600)
 }
 
 onMounted(async () => {
@@ -435,6 +436,12 @@ function startFPSCounter() {
   }
 
   requestAnimationFrame(countFrame)
+}
+
+function loadDemo(demo: typeof DEMO_WORKFLOWS[0]) {
+  if (confirm(`Load "${demo.name}"? Current graph will be cleared.`)) {
+    graphStore.loadGraphData(demo.data)
+  }
 }
 </script>
 
