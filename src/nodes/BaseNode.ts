@@ -57,7 +57,7 @@ export abstract class BaseNode {
   /**
    * Add input port
    */
-  protected addInput(name: string, dataType: DataType): Port {
+  protected addInput(name: string, dataType: DataType, description?: string): Port {
     const port: Port = {
       id: generateId(),
       nodeId: this.id,
@@ -65,7 +65,8 @@ export abstract class BaseNode {
       dataType,
       direction: PortDirection.INPUT,
       connected: false,
-      value: undefined
+      value: undefined,
+      description
     }
     this.inputs.set(port.id, port)
     return port
@@ -74,7 +75,7 @@ export abstract class BaseNode {
   /**
    * Add output port
    */
-  protected addOutput(name: string, dataType: DataType): Port {
+  protected addOutput(name: string, dataType: DataType, description?: string): Port {
     const port: Port = {
       id: generateId(),
       nodeId: this.id,
@@ -82,7 +83,8 @@ export abstract class BaseNode {
       dataType,
       direction: PortDirection.OUTPUT,
       connected: false,
-      value: undefined
+      value: undefined,
+      description
     }
     this.outputs.set(port.id, port)
     return port

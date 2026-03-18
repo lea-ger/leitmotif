@@ -79,73 +79,73 @@ export type ClientToHostMessage =
 // Default capability definitions
 // ---------------------------------------------------------------------------
 
-export const DEFAULT_CAPABILITIES: Record<CapabilityType, Omit<PeerCapability, 'enabled'>> = {
+export const DEFAULT_CAPABILITIES: Record<string, Omit<PeerCapability, 'enabled'>> = {
   [CapabilityType.GYRO]: {
     type: CapabilityType.GYRO,
     ports: [
-      { name: 'alpha', dataType: 'numeric', description: 'Rotation around Z axis' },
-      { name: 'beta',  dataType: 'numeric', description: 'Rotation around X axis' },
-      { name: 'gamma', dataType: 'numeric', description: 'Rotation around Y axis' }
+      { name: 'alpha', dataType: 'numeric', description: 'Rotation around Z axis (0-360)' },
+      { name: 'beta',  dataType: 'numeric', description: 'Rotation around X axis (-180 to 180)' },
+      { name: 'gamma', dataType: 'numeric', description: 'Rotation around Y axis (-90 to 90)' }
     ]
   },
   [CapabilityType.ACCELEROMETER]: {
     type: CapabilityType.ACCELEROMETER,
     ports: [
-      { name: 'x',         dataType: 'numeric', description: 'Acceleration along X axis' },
-      { name: 'y',         dataType: 'numeric', description: 'Acceleration along Y axis' },
-      { name: 'z',         dataType: 'numeric', description: 'Acceleration along Z axis' },
-      { name: 'magnitude', dataType: 'numeric', description: 'Total acceleration magnitude' }
+      { name: 'x',         dataType: 'numeric', description: 'Acceleration X (m/s²)' },
+      { name: 'y',         dataType: 'numeric', description: 'Acceleration Y (m/s²)' },
+      { name: 'z',         dataType: 'numeric', description: 'Acceleration Z (m/s²)' },
+      { name: 'magnitude', dataType: 'numeric', description: 'Total acceleration (m/s²)' }
     ]
   },
   [CapabilityType.TOUCH]: {
     type: CapabilityType.TOUCH,
     ports: [
-      { name: 'touches',  dataType: 'object', description: 'Touch event data' },
-      { name: 'tapEvent', dataType: 'event',  description: 'Tap events' }
+      { name: 'touches',  dataType: 'object', description: 'List of active touch points' },
+      { name: 'tapEvent', dataType: 'event',  description: 'Triggers on finger tap' }
     ]
   },
   [CapabilityType.AUDIO]: {
     type: CapabilityType.AUDIO,
-    ports: [{ name: 'stream', dataType: 'audio', description: 'Audio MediaStream' }]
+    ports: [{ name: 'stream', dataType: 'audio', description: 'Raw audio stream from microphone' }]
   },
   [CapabilityType.VIDEO]: {
     type: CapabilityType.VIDEO,
-    ports: [{ name: 'stream', dataType: 'video', description: 'Video MediaStream' }]
+    ports: [{ name: 'stream', dataType: 'video', description: 'Raw video stream from camera' }]
   },
   [CapabilityType.CANVAS]: {
     type: CapabilityType.CANVAS,
-    ports: [{ name: 'frame', dataType: 'canvas', description: 'Canvas frame data' }]
+    ports: [{ name: 'frame', dataType: 'canvas', description: 'Received canvas frame' }]
   },
   [CapabilityType.CUSTOM]: {
     type: CapabilityType.CUSTOM,
-    ports: [{ name: 'data', dataType: 'object', description: 'Custom data stream' }]
+    ports: [{ name: 'data', dataType: 'object', description: 'Custom JSON data payload' }]
   },
   [CapabilityType.KEYBOARD]: {
     type: CapabilityType.KEYBOARD,
     ports: [
-      { name: 'note',      dataType: 'object',  description: 'Most recent note object' },
-      { name: 'frequency', dataType: 'numeric', description: 'Frequency of pressed key (Hz)' },
-      { name: 'velocity',  dataType: 'numeric', description: 'Key velocity 0-1' },
-      { name: 'keyEvent',  dataType: 'event',   description: 'keydown/keyup event' }
+      { name: 'note',      dataType: 'object',  description: 'Note object { name, midi, vel }' },
+      { name: 'frequency', dataType: 'numeric', description: 'Frequency in Hz' },
+      { name: 'velocity',  dataType: 'numeric', description: 'Velocity (0.0-1.0)' },
+      { name: 'keyEvent',  dataType: 'event',   description: 'Triggers on key press' }
     ]
   },
   [CapabilityType.DRAW]: {
     type: CapabilityType.DRAW,
     ports: [
-      { name: 'x',         dataType: 'numeric', description: 'Draw X position (px)' },
-      { name: 'y',         dataType: 'numeric', description: 'Draw Y position (px)' },
-      { name: 'pressure',  dataType: 'numeric', description: 'Touch pressure 0-1' },
+      { name: 'x',         dataType: 'numeric', description: 'X position' },
+      { name: 'y',         dataType: 'numeric', description: 'Y position' },
+      { name: 'pressure',  dataType: 'numeric', description: 'Pressure (0.0-1.0)' },
       { name: 'phase',     dataType: 'object',  description: 'Phase: start/move/end' },
-      { name: 'drawEvent', dataType: 'event',   description: 'Full draw event object' }
+      { name: 'drawEvent', dataType: 'event',   description: 'Full pointer event object' }
     ]
   },
   [CapabilityType.TOUCHPAD]: {
     type: CapabilityType.TOUCHPAD,
     ports: [
-      { name: 'x',      dataType: 'numeric', description: 'Normalized X position 0-1' },
-      { name: 'y',      dataType: 'numeric', description: 'Normalized Y position 0-1' },
-      { name: 'force',  dataType: 'numeric', description: 'Touch force 0-1' },
-      { name: 'active', dataType: 'event',   description: 'True while touching' }
+      { name: 'x',      dataType: 'numeric', description: 'Normalized X (0.0-1.0)' },
+      { name: 'y',      dataType: 'numeric', description: 'Normalized Y (0.0-1.0)' },
+      { name: 'force',  dataType: 'numeric', description: 'Pressure force' },
+      { name: 'active', dataType: 'event',   description: 'Triggers while touching' }
     ]
   }
 }

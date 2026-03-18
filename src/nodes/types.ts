@@ -47,6 +47,7 @@ export interface Port {
   direction: PortDirection
   connected: boolean
   value?: any
+  description?: string
 }
 
 /**

@@ -49,6 +49,10 @@
               :style="{ background: getPortColor(port.dataType) }"
           />
           <span class="text-[11px] text-base-content/70">{{ port.name }}</span>
+
+          <div v-if="port.description" class="tooltip tooltip-top" :data-tip="port.description">
+             <Icon icon="ph:info" class="text-sm text-base-content/30 hover:text-primary" />
+          </div>
         </div>
       </div>
 
@@ -57,9 +61,14 @@
         <div
             v-for="port in outputPorts"
             :key="port.id"
-            class="flex items-center gap-2 px-2 py-1 relative justify-end"
+            class="flex items-center gap-2 px-2 py-1 relative justify-end group/port"
         >
+          <div v-if="port.description" class="tooltip tooltip-top" :data-tip="port.description">
+            <Icon icon="ph:info" class="text-sm text-base-content/30 hover:text-primary" />
+          </div>
+
           <span class="text-[11px] text-base-content/70">{{ port.name }}</span>
+
           <Handle
               :id="port.id"
               type="source"

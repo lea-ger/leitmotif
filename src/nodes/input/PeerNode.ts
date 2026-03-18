@@ -37,10 +37,10 @@ export class PeerNode extends BaseNode {
 
   initialize(): void {
     // Host -> peer controls
-    this.addInput('out.canvas', DataType.CANVAS)
-    this.addInput('out.haptic', DataType.EVENT)
-    this.addInput('out.audio', DataType.AUDIO)
-    this.addInput('out.audioTrigger', DataType.OBJECT)
+    this.addInput('out.canvas', DataType.CANVAS, 'Send a canvas to the peer screen')
+    this.addInput('out.haptic', DataType.EVENT, 'Trigger haptic vibration on peer device')
+    this.addInput('out.audio', DataType.AUDIO, 'Send audio stream to peer speakers')
+    this.addInput('out.audioTrigger', DataType.OBJECT, 'Trigger synthesized sound on peer device')
 
     // Node-level settings for simpler UX
     this.addParameter({
@@ -157,7 +157,7 @@ export class PeerNode extends BaseNode {
         const portName = `${capability.type}.${portDef.name}`
         const exists = Array.from(this.outputs.values()).some(p => p.name === portName)
         if (!exists) {
-          this.addOutput(portName, this.mapDataType(portDef.dataType))
+          this.addOutput(portName, this.mapDataType(portDef.dataType), portDef.description)
         }
       }
     }
