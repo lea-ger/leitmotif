@@ -68,6 +68,7 @@ export type HostToClientMessage =
 
 export type ClientToHostMessage =
   | { type: 'hello' }
+  | { type: 'heartbeat' }
   | { type: 'sensors'; ax: number; ay: number; az: number; alpha: number; beta: number; gamma: number }
   | { type: 'keydown'; note: string; frequency: number; velocity: number }
   | { type: 'keyup';   note: string }

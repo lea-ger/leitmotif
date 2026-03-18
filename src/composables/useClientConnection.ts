@@ -28,6 +28,7 @@ export function useClientConnection() {
   let mediaCall: MediaConnection | null = null
   let remoteAudioEl: HTMLAudioElement | null = null
   let sendTimer: number | null = null
+  let heartbeatTimer: number | null = null
 
   // Sensor values (still sent every 20ms)
   const ax = ref(0), ay = ref(0), az = ref(0)
@@ -195,6 +196,12 @@ export function useClientConnection() {
         statusMessage.value = 'Connected'
         c.send({ type: 'hello' } satisfies ClientToHostMessage)
         startSensors()
+
+        // Start heartbeat (2s)
+        if (heartbeatTimer) clearInterval(heartbeatTimer)
+        heartbeatTimer = window.setInterval(() => {
+          if (conn?.open) conn.send({ type: 'heartbeat' } satisfies ClientToHostMessage)
+        }, 2000)
       })
 
       c.on('data', (payload: unknown) => {
@@ -206,6 +213,7 @@ export function useClientConnection() {
         status.value = 'disconnected'
         statusMessage.value = 'Disconnected'
         stopSensors()
+        if (heartbeatTimer) clearInterval(heartbeatTimer)
       })
 
       c.on('error', (e) => {
@@ -222,6 +230,7 @@ export function useClientConnection() {
 
   function disconnect() {
     stopSensors()
+    if (heartbeatTimer) clearInterval(heartbeatTimer)
     if (mediaCall) {
       try { mediaCall.close() } catch {}
       mediaCall = null

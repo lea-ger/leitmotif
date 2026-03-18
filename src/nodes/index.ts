@@ -23,6 +23,7 @@ export * from './output/AllPeersOutputNode'
 
 // Utility nodes
 export * from './utility/DebugNode'
+export * from './utility/CommentNode'
 
 // Auto-register all nodes
 import { NodeRegistry } from './NodeRegistry'
@@ -39,6 +40,7 @@ import { AudioOutputNode } from './output/AudioOutputNode'
 import { CanvasOutputNode } from './output/CanvasOutputNode'
 import { AllPeersOutputNode } from './output/AllPeersOutputNode'
 import { DebugNode } from './utility/DebugNode'
+import { CommentNode } from './utility/CommentNode'
 
 // Register all nodes
 export function registerAllNodes(): void {
@@ -55,4 +57,5 @@ export function registerAllNodes(): void {
   NodeRegistry.register(CanvasOutputNode)
   NodeRegistry.register(AllPeersOutputNode)
   NodeRegistry.register(DebugNode)
+  NodeRegistry.register(CommentNode)
 }

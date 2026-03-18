@@ -119,6 +119,12 @@
                   @delete="confirmDeleteById(nodeProps.id)"
               />
             </template>
+            <template #node-comment="nodeProps">
+              <CommentNodeComponent
+                  :data="nodeProps.data"
+                  @delete="confirmDeleteById(nodeProps.id)"
+              />
+            </template>
             <template #edge-default="edgeProps">
               <CustomEdge v-bind="edgeProps" />
             </template>
@@ -190,6 +196,7 @@ import {registerAllNodes} from '../nodes'
 import type {BaseNode} from '../nodes/BaseNode'
 import {PeerNode} from '../nodes/input/PeerNode'
 import NodeComponent from '../components/NodeComponent.vue'
+import CommentNodeComponent from '../components/CommentNodeComponent.vue'
 import CustomEdge from '../components/CustomEdge.vue'
 import PeerPanel from '../components/PeerPanel.vue'
 import QRCodeModal from '../components/QRCodeModal.vue'

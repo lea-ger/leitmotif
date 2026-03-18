@@ -104,7 +104,7 @@ export abstract class BaseNode {
   /**
    * Get parameter value (checks input port first if exposed)
    */
-  protected getParameter(id: string): any {
+  public getParameter(id: string): any {
     const paramDef = this.parameterDefinitions.get(id)
     if (paramDef?.exposedAsInput) {
       // Check if there's an input port for this parameter

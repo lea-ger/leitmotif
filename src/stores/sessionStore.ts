@@ -17,6 +17,7 @@ export const useSessionStore = defineStore('session', () => {
 
   // Active PeerJS host instance
   let hostPeer: Peer | null = null
+  let healthCheckInterval: number | null = null
 
   /**
    * Generate an 8-digit room key and immediately start the host peer
@@ -177,10 +178,19 @@ export const useSessionStore = defineStore('session', () => {
       console.warn('[Host] PeerJS disconnected, reconnecting…')
       peer.reconnect()
     })
+
+    // Start health check interval
+    healthCheckInterval = window.setInterval(() => {
+      peerStore.checkPeerHealth()
+    }, 2000)
   }
 
   function stopHost() {
     const peerStore = usePeerStore()
+    if (healthCheckInterval) {
+      clearInterval(healthCheckInterval)
+      healthCheckInterval = null
+    }
     peerStore.setHostPeer(null)
     if (hostPeer) {
       hostPeer.destroy()
@@ -214,7 +224,12 @@ export const useSessionStore = defineStore('session', () => {
     conn.on('data', (payload: unknown) => {
       const data = payload as Record<string, any>
 
-      if (!data || data.type === 'hello') return
+      // Update last seen for ANY data packet
+      peerStore.updatePeerLastSeen(clientPeerId)
+
+      if (!data) return
+      if (data.type === 'heartbeat') return // Heartbeat only updates lastSeen
+      if (data.type === 'hello') return
 
       // Legacy & new typed message dispatch
       switch (data.type) {

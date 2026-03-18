@@ -40,9 +40,11 @@ export const useGraphStore = defineStore('graph', () => {
 
     // Create Vue Flow node
     const metadata = NodeRegistry.getMetadata(type)
+    const flowType = type === 'comment' ? 'comment' : 'custom'
+    
     flowNodes.value = [...flowNodes.value, {
       id: node.id,
-      type: 'custom',
+      type: flowType,
       position,
       data: {
         node,
@@ -350,9 +352,11 @@ export const useGraphStore = defineStore('graph', () => {
         nodeInstances.value.set(node.id, node)
 
         const metadata = NodeRegistry.getMetadata(nodeData.type)
+        const flowType = nodeData.type === 'comment' ? 'comment' : 'custom'
+        
         flowNodes.value.push({
           id: node.id,
-          type: 'custom',
+          type: flowType,
           position: nodeData.position,
           data: { node, metadata },
           label: metadata?.displayName || nodeData.type

@@ -61,6 +61,31 @@ export const usePeerStore = defineStore('peer', () => {
     saveToStorage().catch(e => console.error('Failed to save after removePeer:', e))
   }
 
+  const updatePeerLastSeen = (peerId: string) => {
+    const peer = peers.value.get(peerId)
+    if (peer) {
+      peer.lastSeen = new Date()
+    }
+  }
+
+  /**
+   * Check for peers that haven't been seen in a while and mark them as disconnected
+   */
+  const checkPeerHealth = () => {
+    const now = Date.now()
+    const TIMEOUT_MS = 10000 // 10 seconds
+
+    for (const [id, peer] of peers.value.entries()) {
+      if (peer.connected && !peer.isMock) {
+        const lastSeen = peer.lastSeen.getTime()
+        if (now - lastSeen > TIMEOUT_MS) {
+          console.log(`[peerStore] Peer ${id} timed out (last seen ${Math.round((now - lastSeen)/1000)}s ago)`)
+          setPeerConnected(id, false)
+        }
+      }
+    }
+  }
+
   /**
    * Update peer connection status
    */
@@ -470,6 +495,8 @@ export const usePeerStore = defineStore('peer', () => {
     addPeer,
     removePeer,
     setPeerConnected,
+    updatePeerLastSeen,
+    checkPeerHealth,
     updatePeerCapabilities,
     setCapabilityEnabled,
     updatePeerData,
