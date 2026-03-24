@@ -1,6 +1,13 @@
 <template>
   <dialog ref="dialogRef" class="modal">
     <div class="modal-box">
+      <button
+          @click="close"
+          class="absolute right-2 top-2 btn btn-sm btn-ghost btn-square"
+      >
+        <Icon icon="ph:x" />
+      </button>
+
       <div class="node-library bg-base-200 p-4 overflow-y-auto">
         <h3 class="text-lg font-bold mb-4">Node Library</h3>
         <h4 class="text-md mb-4">Drag a Node to place it in the Editor</h4>
