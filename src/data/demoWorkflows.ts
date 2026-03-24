@@ -38,7 +38,7 @@ export const DEMO_WORKFLOWS = [
           parameters: {
             text: 'This is a basic sine wave synthesizer connected to audio output.',
             width: 350,
-            height: 80
+            height: 100
           },
           exposedParameters: []
         }
@@ -90,7 +90,7 @@ export const DEMO_WORKFLOWS = [
           parameters: {
             text: 'Generates a blank canvas for drawing operations.',
             width: 300,
-            height: 80
+            height: 100
           },
           exposedParameters: []
         }

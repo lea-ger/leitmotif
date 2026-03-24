@@ -2,11 +2,35 @@
   <div class="editor-view">
     <!-- Toolbar -->
     <div class="toolbar bg-base-300 px-4 py-2 flex items-center gap-4 border-b border-base-content/10">
+      <!-- Left side - File menu -->
       <ul class="menu menu-horizontal rounded-box">
         <li>
           <details>
+            <summary>
+              <Icon icon="ph:folder-open" class="text-base"/>
+              File
+            </summary>
+            <ul class="z-10 bg-base-200 shadow-xl">
+              <li><a @click="handleExportGraph">
+                <Icon icon="ph:download-simple"/>
+                Export Graph
+              </a></li>
+              <li><a @click="handleImportGraph">
+                <Icon icon="ph:upload-simple"/>
+                Import Graph
+              </a></li>
+              <li class="divider h-px"></li>
+              <li><a @click="clearGraph" class="text-error">
+                <Icon icon="ph:trash"/>
+                Clear Graph
+              </a></li>
+            </ul>
+          </details>
+        </li>
+        <li>
+          <details>
             <summary>Examples</summary>
-            <ul class="z-10">
+            <ul class="z-10 bg-base-200 shadow-xl">
               <li v-for="demo in DEMO_WORKFLOWS" :key="demo.id">
                 <a @click="loadDemo(demo)">{{ demo.name }}</a>
               </li>
@@ -16,6 +40,7 @@
       </ul>
 
       <div class="flex-1"/>
+
       <!-- Controls -->
       <button
           @click="toggleExecution"
@@ -26,12 +51,6 @@
         <Icon v-else icon="ph:play-bold"/>
       </button>
 
-      <button
-          @click="clearGraph"
-          class="btn btn-sm btn-ghost"
-      >
-        <Icon icon="ph:trash"/>
-      </button>
       <div class="flex-1"/>
 
       <!-- Room Key Display -->
@@ -80,11 +99,14 @@
     </div>
 
     <div class="editor-content relative">
-      <!-- Peer Panel (always mounted, self-manages open/closed) -->
+      <!-- Peer Panel (left side) -->
       <PeerPanel
           @add-peer-node="addPeerNodeToGraph"
           @add-all-peers-node="addAllPeersNodeToGraph"
       />
+
+      <!-- Variable Panel (right side) -->
+      <!-- <VariablePanel />-->
 
       <!-- Main Canvas Area -->
       <div class="flex flex-col absolute w-full h-full">
@@ -152,6 +174,15 @@
     <!-- QR Code Modal -->
     <QRCodeModal ref="qrModalRef"/>
 
+    <!-- Hidden file input for graph import -->
+    <input
+        ref="fileInputRef"
+        type="file"
+        accept=".json,application/json"
+        class="hidden"
+        @change="onFileSelected"
+    />
+
     <dialog class="modal"
             :class="confirmDeleteChange ? 'modal-open' : ''"
     >
@@ -188,6 +219,7 @@ import {
 import {useGraphStore} from '../stores/graphStore'
 import {usePeerStore} from '../stores/peerStore'
 import {useSessionStore} from '../stores/sessionStore'
+import {useVariableStore} from '../stores/variableStore'
 import {GraphExecutor} from '../engine/GraphExecutor'
 import {registerAllNodes} from '../nodes'
 import type {BaseNode} from '../nodes/BaseNode'
@@ -196,6 +228,7 @@ import NodeComponent from '../components/NodeComponent.vue'
 import CommentNodeComponent from '../components/CommentNodeComponent.vue'
 import CustomEdge from '../components/CustomEdge.vue'
 import PeerPanel from '../components/PeerPanel.vue'
+import VariablePanel from '../components/VariablePanel.vue'
 import QRCodeModal from '../components/QRCodeModal.vue'
 import '@vue-flow/core/dist/style.css'
 import '@vue-flow/core/dist/theme-default.css'
@@ -212,6 +245,7 @@ registerAllNodes()
 const graphStore = useGraphStore()
 const peerStore = usePeerStore()
 const sessionStore = useSessionStore()
+const variableStore = useVariableStore()
 
 const flowNodes = computed(() => graphStore.flowNodes)
 const flowEdges = computed(() => graphStore.flowEdges)
@@ -224,6 +258,7 @@ const audioEnabled = ref(false)
 const qrModalRef = ref<InstanceType<typeof QRCodeModal> | null>(null)
 const nodeLibraryModalRef = ref<InstanceType<typeof NodeLibraryModal> | null>(null)
 const confirmDeleteChange = ref<NodeRemoveChange | null>(null)
+const fileInputRef = ref<HTMLInputElement | null>(null)
 const selectedNodeMetadata = computed(() => {
   if (!graphStore.selectedNode) return undefined
   return NodeRegistry.getMetadata(graphStore.selectedNode.type) ?? undefined
@@ -247,6 +282,7 @@ onMounted(async () => {
   startFPSCounter()
   await peerStore.loadFromStorage()
   await graphStore.loadFromStorage()
+  await variableStore.loadFromStorage()
 })
 
 onBeforeUnmount(() => {
@@ -255,6 +291,7 @@ onBeforeUnmount(() => {
   if (saveTimer) clearTimeout(saveTimer)
   graphStore.saveToStorage()
   peerStore.saveToStorage()
+  variableStore.saveToStorage()
 })
 
 // Watch graph changes and update executor
@@ -295,6 +332,48 @@ function clearGraph() {
     graphStore.clear()
   }
 }
+
+/**
+ * Export current graph as JSON file
+ */
+function handleExportGraph() {
+  try {
+    graphStore.downloadGraph()
+    console.log('Graph exported successfully')
+  } catch (error) {
+    console.error('Failed to export graph:', error)
+    alert('Failed to export graph. Check console for details.')
+  }
+}
+
+/**
+ * Import graph from JSON file
+ */
+function handleImportGraph() {
+  fileInputRef.value?.click()
+}
+
+/**
+ * Handle file input change
+ */
+async function onFileSelected(event: Event) {
+  const target = event.target as HTMLInputElement
+  const file = target.files?.[0]
+
+  if (!file) return
+
+  try {
+    await graphStore.uploadGraph(file)
+    console.log('Graph imported successfully')
+  } catch (error) {
+    console.error('Failed to import graph:', error)
+    alert('Failed to import graph. Please check the file format.')
+  } finally {
+    // Reset file input
+    target.value = ''
+  }
+}
+
 
 function initializeRoom() {
   sessionStore.generateRoomKey()

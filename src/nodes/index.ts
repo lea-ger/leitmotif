@@ -15,6 +15,8 @@ export * from './processor/ToneSynthNode'
 export * from './processor/LoopNode'
 export * from './processor/ExpressionNode'
 export * from './processor/IfNode'
+export * from './processor/CanvasTransformNode'
+export * from './processor/CanvasMergeNode'
 
 // Output nodes
 export * from './output/AudioOutputNode'
@@ -24,6 +26,7 @@ export * from './output/AllPeersOutputNode'
 // Utility nodes
 export * from './utility/DebugNode'
 export * from './utility/CommentNode'
+export * from './utility/VariableNode'
 
 // Auto-register all nodes
 import { NodeRegistry } from './NodeRegistry'
@@ -41,6 +44,9 @@ import { CanvasOutputNode } from './output/CanvasOutputNode'
 import { AllPeersOutputNode } from './output/AllPeersOutputNode'
 import { DebugNode } from './utility/DebugNode'
 import { CommentNode } from './utility/CommentNode'
+import { VariableNode } from './utility/VariableNode'
+import { CanvasTransformNode } from './processor/CanvasTransformNode'
+import { CanvasMergeNode } from './processor/CanvasMergeNode'
 
 // Register all nodes
 export function registerAllNodes(): void {
@@ -58,4 +64,7 @@ export function registerAllNodes(): void {
   NodeRegistry.register(AllPeersOutputNode)
   NodeRegistry.register(DebugNode)
   NodeRegistry.register(CommentNode)
+  NodeRegistry.register(VariableNode)
+  NodeRegistry.register(CanvasTransformNode)
+  NodeRegistry.register(CanvasMergeNode)
 }

@@ -38,6 +38,24 @@
 
     <!-- Content -->
     <div class="flex-1 overflow-y-auto p-4 space-y-2">
+      <!-- Available Variables Hint (for Expression and If nodes) -->
+      <div 
+        v-if="showVariableHint && availableVariables.length > 0"
+        class="alert alert-info text-xs p-2 mb-3"
+      >
+        <Icon icon="ph:database" class="text-sm" />
+        <div class="flex-1">
+          <div class="font-semibold mb-1">Available Variables:</div>
+          <div class="font-mono flex flex-wrap gap-1">
+            <span 
+              v-for="varName in availableVariables" 
+              :key="varName"
+              class="badge badge-xs badge-success"
+            >{{ varName }}</span>
+          </div>
+        </div>
+      </div>
+
       <div v-if="parameters.length === 0" class="text-sm text-base-content/60 text-center py-8">
         No parameters available
       </div>
@@ -175,6 +193,7 @@ import {Icon} from '@iconify/vue'
 import type {BaseNode} from '../nodes/BaseNode'
 import type {NodeMetadata} from '../nodes/types'
 import {useGraphStore} from '../stores/graphStore'
+import {useVariableStore} from '../stores/variableStore'
 
 interface Props {
   selectedNode: BaseNode | null
@@ -187,10 +206,19 @@ defineEmits<{
 }>()
 
 const graphStore = useGraphStore()
+const variableStore = useVariableStore()
 
 const parameters = computed(() => {
   if (!props.selectedNode) return []
   return props.selectedNode.getParameterDefinitions()
+})
+
+const showVariableHint = computed(() => {
+  return props.selectedNode?.type === 'expression' || props.selectedNode?.type === 'if'
+})
+
+const availableVariables = computed(() => {
+  return variableStore.allVariables.map(v => v.name)
 })
 
 const nodeColor = computed(() => props.metadata?.color || '#6b7280')

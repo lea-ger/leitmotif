@@ -1,19 +1,22 @@
 import { BaseNode } from '../BaseNode'
 import { DataType, NodeCategory, type NodeMetadata } from '../types'
 import { evaluate, parse, type ParseResult } from 'cel-js'
+import { useVariableStore } from '../../stores/variableStore'
 
 /**
  * If Node
  * Routes the `value` input to either `onTrue` or `onFalse` based on a
  * CEL condition expression. `value`, `a`, and `b` are available as
- * variables inside the condition.
+ * variables inside the condition, along with global variables.
  *
  * Example conditions:
  *   value > 0.5
  *   a == b
+ *   value > threshold
  *   value != null
  */
 export class IfNode extends BaseNode {
+  private variableStore = useVariableStore()
   private cachedCondition: string = ''
   private cachedCst: ParseResult | null = null
 
@@ -26,7 +29,7 @@ export class IfNode extends BaseNode {
       type: 'if',
       category: NodeCategory.PROCESSOR,
       displayName: 'If',
-      description: 'Routes value to onTrue or onFalse output based on a CEL condition',
+      description: 'Routes value based on a CEL condition with global variables',
       color: '#0ea5e9',
       icon: 'ph:git-branch'
     }
@@ -76,8 +79,18 @@ export class IfNode extends BaseNode {
     let result: boolean = false
     try {
       const context: Record<string, unknown> = { value }
+      
+      // Add input ports
       if (a !== undefined) context.a = a
       if (b !== undefined) context.b = b
+
+      // Add global variables
+      for (const variable of this.variableStore.allVariables) {
+        // Only add if not already defined by an input (inputs take precedence)
+        if (!(variable.name in context)) {
+          context[variable.name] = variable.value
+        }
+      }
 
       result = Boolean(evaluate(this.cachedCst.cst, context))
     } catch {

@@ -1,18 +1,22 @@
 import { BaseNode } from '../BaseNode'
 import { DataType, NodeCategory, type NodeMetadata } from '../types'
 import { evaluate, parse, type ParseResult } from 'cel-js'
+import { useVariableStore } from '../../stores/variableStore'
 
 /**
  * Expression Node
  * Evaluates a Common Expression Language (CEL) expression.
  * Variables a, b, c are bound to the corresponding input ports.
+ * Global variables from the Variable Store are also available.
  *
  * Example expressions:
  *   a + b
  *   a * 2.0
  *   a > b ? a : b
+ *   outputWidth / 4
  */
 export class ExpressionNode extends BaseNode {
+  private variableStore = useVariableStore()
   private cachedExpression: string = ''
   private cachedCst: ParseResult | null = null
 
@@ -25,7 +29,7 @@ export class ExpressionNode extends BaseNode {
       type: 'expression',
       category: NodeCategory.PROCESSOR,
       displayName: 'Expression',
-      description: 'Evaluates a CEL expression with inputs a, b, c',
+      description: 'Evaluates a CEL expression with inputs a, b, c and global variables',
       color: '#f59e0b',
       icon: 'ph:math-operations'
     }
@@ -70,9 +74,19 @@ export class ExpressionNode extends BaseNode {
 
     try {
       const context: Record<string, unknown> = {}
+      
+      // Add input ports
       if (a !== undefined) context.a = a
       if (b !== undefined) context.b = b
       if (c !== undefined) context.c = c
+
+      // Add global variables
+      for (const variable of this.variableStore.allVariables) {
+        // Only add if not already defined by an input (inputs take precedence)
+        if (!(variable.name in context)) {
+          context[variable.name] = variable.value
+        }
+      }
 
       const result = evaluate(this.cachedCst.cst, context)
       this.setOutputValue('result', result)

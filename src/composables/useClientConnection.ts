@@ -89,6 +89,7 @@ export function useClientConnection() {
       }
       case 'haptic': {
         hapticPulse.value++
+
         if ('vibrate' in navigator) navigator.vibrate(msg.pattern)
         break
       }

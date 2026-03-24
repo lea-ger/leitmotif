@@ -290,6 +290,119 @@ export const useGraphStore = defineStore('graph', () => {
     }
 
     /**
+     * Export graph as JSON string
+     */
+    function exportGraphJSON(): string {
+        const graphData = {
+            nodes: Array.from(nodeInstances.value.entries()).map(([, node]) => {
+                const params: Record<string, any> = {}
+                if ((node as any).parameters instanceof Map) {
+                    ;(node as any).parameters.forEach((value: any, key: string) => {
+                        params[key] = value
+                    })
+                }
+
+                const exposedParams: string[] = []
+                if ((node as any).parameterDefinitions instanceof Map) {
+                    ;(node as any).parameterDefinitions.forEach((def: any, key: string) => {
+                        if (def.exposedAsInput) exposedParams.push(key)
+                    })
+                }
+
+                let peerConfig: any = undefined
+                if (node.type === 'peer' && typeof (node as any).getPeerId === 'function') {
+                    peerConfig = {
+                        peerId: (node as any).getPeerId(),
+                        enabledCapabilities: (node as any).getEnabledCapabilities?.() || [],
+                        enabledOutputChannels: (node as any).getEnabledOutputChannels?.() || []
+                    }
+                }
+
+                return {
+                    id: node.id,
+                    type: node.type,
+                    position: node.position,
+                    enabled: node.enabled,
+                    parameters: params,
+                    exposedParameters: exposedParams,
+                    peerConfig
+                }
+            }),
+            connections: Array.from(connections.value.values()),
+            previewEnabled: Array.from(nodePreviewEnabled.value),
+            metadata: {
+                version: '1.0',
+                exportDate: new Date().toISOString(),
+                nodeCount: nodeInstances.value.size,
+                connectionCount: connections.value.size
+            }
+        }
+
+        return JSON.stringify(graphData, null, 2)
+    }
+
+    /**
+     * Download graph as JSON file
+     */
+    function downloadGraph(filename?: string): void {
+        const json = exportGraphJSON()
+        const blob = new Blob([json], { type: 'application/json' })
+        const url = URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = filename || `leitmotif-graph-${Date.now()}.json`
+        document.body.appendChild(a)
+        a.click()
+        document.body.removeChild(a)
+        URL.revokeObjectURL(url)
+    }
+
+    /**
+     * Import graph from JSON string
+     */
+    async function importGraphJSON(json: string, merge: boolean = false): Promise<void> {
+        try {
+            const graphData = JSON.parse(json)
+            
+            if (!graphData.nodes || !Array.isArray(graphData.nodes)) {
+                throw new Error('Invalid graph format: missing nodes array')
+            }
+
+            if (merge) {
+                // TODO: Implement merge mode (add to existing graph)
+                console.warn('Merge mode not yet implemented, replacing graph')
+            }
+
+            await loadGraphData(graphData)
+        } catch (error) {
+            console.error('Failed to import graph:', error)
+            throw error
+        }
+    }
+
+    /**
+     * Load graph from uploaded file
+     */
+    async function uploadGraph(file: File): Promise<void> {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader()
+            
+            reader.onload = async (e) => {
+                try {
+                    const json = e.target?.result as string
+                    await importGraphJSON(json)
+                    resolve()
+                } catch (error) {
+                    reject(error)
+                }
+            }
+            
+            reader.onerror = () => reject(new Error('Failed to read file'))
+            reader.readAsText(file)
+        })
+    }
+
+    /**
      * Load graph from a data object
      */
     async function loadGraphData(graphData: any): Promise<void> {
@@ -450,6 +563,10 @@ export const useGraphStore = defineStore('graph', () => {
         clear,
         saveToStorage,
         loadFromStorage,
-        loadGraphData
+        loadGraphData,
+        exportGraphJSON,
+        downloadGraph,
+        importGraphJSON,
+        uploadGraph
     }
 })
