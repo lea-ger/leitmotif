@@ -1,6 +1,6 @@
 <template>
   <dialog ref="dialogRef" class="modal">
-    <div class="modal-box">
+    <div class="modal-box w-11/12 max-w-5xl">
       <button
           @click="close"
           class="absolute right-2 top-2 btn btn-sm btn-ghost btn-square"
@@ -27,14 +27,14 @@
               {{ categoryLabels[category] }}
             </h4>
 
-            <div class="space-y-2">
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
               <div
-                  v-for="node in getNodesByCategory(category)"
-                  :key="node.metadata.type"
-                  :draggable="true"
-                  @dragstart="onDragStart($event, node.metadata.type)"
-                  class="node-item p-3 bg-base-100 rounded-lg cursor-move hover:bg-base-300 transition-colors"
-                  :style="{ borderLeft: `4px solid ${node.metadata.color || '#666'}` }"
+                v-for="node in getNodesByCategory(category)"
+                :key="node.metadata.type"
+                :draggable="true"
+                @dragstart="onDragStart($event, node.metadata.type)"
+                class="node-item p-3 bg-base-100 rounded-b-lg rounded-t-sm cursor-move hover:bg-base-300 transition-colors h-full flex flex-col justify-between"
+                :style="{ borderTop: `4px solid ${node.metadata.color || '#666'}` }"
               >
                 <div class="flex items-center gap-2">
                   <Icon :icon="node.metadata.icon || 'ph:package'" class="text-xl"/>
@@ -118,6 +118,8 @@ defineExpose({open, close})
 <style scoped>
 .node-item {
   user-select: none;
+  /* Optional: gleiche Höhe für Grid-Items */
+  min-height: 64px;
 }
 
 .node-item:active {
