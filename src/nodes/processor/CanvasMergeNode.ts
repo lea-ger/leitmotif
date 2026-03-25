@@ -3,9 +3,10 @@ import { DataType, NodeCategory, type NodeMetadata } from '../types'
 
 /**
  * Canvas Merge Node
- * Combines multiple canvases onto a single output canvas.
- * Accepts an array of canvas objects with position data:
- * [{ canvas: OffscreenCanvas, x: number, y: number }]
+ * Combines canvases onto a single output canvas.
+ * Supports two direct layer inputs and (legacy) array input:
+ * - layerA/layerB + x/y offsets
+ * - optional legacy `canvases` array of {canvas, x, y}
  */
 export class CanvasMergeNode extends BaseNode {
   constructor(id?: string) {
@@ -17,16 +18,21 @@ export class CanvasMergeNode extends BaseNode {
       type: 'canvas-merge',
       category: NodeCategory.PROCESSOR,
       displayName: 'Canvas Merge',
-      description: 'Combine multiple canvases into one',
+      description: 'Combine two canvases into one',
       color: '#ec4899',
       icon: 'ph:stack'
     }
   }
 
   initialize(): void {
-    // Array of canvas objects: [{ canvas, x, y }]
-    this.addInput('canvases', DataType.OBJECT, 'Array of {canvas, x, y} objects')
-    
+    // Preferred direct layers (simple workflow)
+    this.addInput('layerA', DataType.CANVAS, 'First layer canvas')
+    this.addInput('xA', DataType.NUMERIC, 'X offset for layer A')
+    this.addInput('yA', DataType.NUMERIC, 'Y offset for layer A')
+    this.addInput('layerB', DataType.CANVAS, 'Second layer canvas')
+    this.addInput('xB', DataType.NUMERIC, 'X offset for layer B')
+    this.addInput('yB', DataType.NUMERIC, 'Y offset for layer B')
+
     // Background canvas (optional base layer)
     this.addInput('background', DataType.CANVAS, 'Optional background canvas')
 
@@ -42,7 +48,7 @@ export class CanvasMergeNode extends BaseNode {
       id: 'width',
       name: 'Width',
       type: 'number',
-      defaultValue: 1920,
+      defaultValue: 0,
       exposedAsInput: true
     })
 
@@ -50,7 +56,7 @@ export class CanvasMergeNode extends BaseNode {
       id: 'height',
       name: 'Height',
       type: 'number',
-      defaultValue: 1080,
+      defaultValue: 0,
       exposedAsInput: true
     })
 
@@ -70,15 +76,18 @@ export class CanvasMergeNode extends BaseNode {
   }
 
   process(): void {
-    // Get dimensions
-    const width = this.getInputValue('width') ?? this.getParameter('width') ?? 1920
-    const height = this.getInputValue('height') ?? this.getParameter('height') ?? 1080
+    const layerA = this.resolveCanvasSource(this.getInputValue('layerA'))
+    const layerB = this.resolveCanvasSource(this.getInputValue('layerB'))
+    const background = this.resolveCanvasSource(this.getInputValue('background'))
+
+    // Auto-size from first available source when width/height are 0.
+    const widthInput = Number(this.getInputValue('width') ?? this.getParameter('width') ?? 0)
+    const heightInput = Number(this.getInputValue('height') ?? this.getParameter('height') ?? 0)
+    const refCanvas = layerA ?? layerB ?? background
+    const width = widthInput > 0 ? widthInput : (refCanvas?.width ?? 1920)
+    const height = heightInput > 0 ? heightInput : (refCanvas?.height ?? 1080)
     const clearBackground = Boolean(this.getParameter('clearBackground'))
     const backgroundColor = String(this.getParameter('backgroundColor') || '#000000')
-
-    // Get canvas array
-    const canvasArray = this.getInputValue('canvases')
-    const background = this.getInputValue('background') as OffscreenCanvas | null
 
     // Create output canvas
     const outputCanvas = new OffscreenCanvas(width, height)
@@ -104,33 +113,47 @@ export class CanvasMergeNode extends BaseNode {
       }
     }
 
-    // Draw all canvases from array
-    if (Array.isArray(canvasArray)) {
-      for (const item of canvasArray) {
-        if (!item || typeof item !== 'object') continue
-        
-        const canvas = item.canvas
-        const x = item.x ?? 0
-        const y = item.y ?? 0
-        const w = item.width ?? canvas?.width
-        const h = item.height ?? canvas?.height
-
-        if (canvas && canvas instanceof OffscreenCanvas) {
-          try {
-            if (w !== undefined && h !== undefined) {
-              // Draw with specific dimensions
-              ctx.drawImage(canvas, x, y, w, h)
-            } else {
-              // Draw at original size
-              ctx.drawImage(canvas, x, y)
-            }
-          } catch (error) {
-            console.warn('[CanvasMergeNode] Failed to draw canvas:', error)
-          }
-        }
+    const drawLayer = (source: any, x: number, y: number) => {
+      if (!source) return
+      try {
+        ctx.drawImage(source, x, y)
+      } catch (error) {
+        console.warn('[CanvasMergeNode] Failed to draw layer:', error)
       }
     }
 
+    const xA = Number(this.getInputValue('xA') ?? 0)
+    const yA = Number(this.getInputValue('yA') ?? 0)
+    drawLayer(layerA, xA, yA)
+
+    const xB = Number(this.getInputValue('xB') ?? 0)
+    const yB = Number(this.getInputValue('yB') ?? 0)
+    drawLayer(layerB, xB, yB)
+
     this.setOutputValue('canvas', outputCanvas)
+  }
+
+  private resolveCanvasSource(input: any): OffscreenCanvas | HTMLCanvasElement | ImageBitmap | null {
+    if (!input) return null
+    if (this.isCanvasLike(input)) return input
+
+    const candidates = [
+      input?.frame,
+      input?.canvas,
+      input?.data?.frame,
+      input?.data?.canvas
+    ]
+
+    for (const c of candidates) {
+      if (this.isCanvasLike(c)) return c
+    }
+    return null
+  }
+
+  private isCanvasLike(value: any): value is OffscreenCanvas | HTMLCanvasElement | ImageBitmap {
+    return Boolean(value)
+      && typeof value === 'object'
+      && typeof value.width === 'number'
+      && typeof value.height === 'number'
   }
 }

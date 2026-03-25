@@ -10,7 +10,7 @@
               <Icon icon="ph:folder-open" class="text-base"/>
               File
             </summary>
-            <ul class="z-10 bg-base-200 shadow-xl">
+            <ul class="min-w-3xs z-40 bg-base-200 shadow-xl">
               <li><a @click="handleExportGraph">
                 <Icon icon="ph:download-simple"/>
                 Export Graph
@@ -30,7 +30,7 @@
         <li>
           <details>
             <summary>Examples</summary>
-            <ul class="z-10 bg-base-200 shadow-xl">
+            <ul class="z-40 bg-base-200 shadow-xl">
               <li v-for="demo in DEMO_WORKFLOWS" :key="demo.id">
                 <a @click="loadDemo(demo)">{{ demo.name }}</a>
               </li>
@@ -228,7 +228,6 @@ import NodeComponent from '../components/NodeComponent.vue'
 import CommentNodeComponent from '../components/CommentNodeComponent.vue'
 import CustomEdge from '../components/CustomEdge.vue'
 import PeerPanel from '../components/PeerPanel.vue'
-import VariablePanel from '../components/VariablePanel.vue'
 import QRCodeModal from '../components/QRCodeModal.vue'
 import '@vue-flow/core/dist/style.css'
 import '@vue-flow/core/dist/theme-default.css'

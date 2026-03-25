@@ -65,6 +65,7 @@ function resizeCanvas() {
 function clearCanvas() {
   if (!ctx || !drawCanvasEl.value) return
   ctx.clearRect(0, 0, drawCanvasEl.value.width, drawCanvasEl.value.height)
+  emit('send', { type: 'draw', x: 0, y: 0, pressure: 0, phase: 'end', clear: true })
 }
 
 function getPos(e: PointerEvent) {
@@ -78,7 +79,14 @@ function onPointerDown(e: PointerEvent) {
   const { x, y } = getPos(e)
   ctx!.beginPath()
   ctx!.moveTo(x, y)
-  emit('send', { type: 'draw', x, y, pressure: e.pressure ?? 1, phase: 'start' })
+  emit('send', {
+    type: 'draw',
+    x, y,
+    pressure: e.pressure ?? 1,
+    phase: 'start',
+    color: strokeColor.value,
+    size: strokeSize.value
+  })
 }
 
 function onPointerMove(e: PointerEvent) {
@@ -90,14 +98,28 @@ function onPointerMove(e: PointerEvent) {
   ctx!.lineJoin = 'round'
   ctx!.lineTo(x, y)
   ctx!.stroke()
-  emit('send', { type: 'draw', x, y, pressure: e.pressure ?? 1, phase: 'move' })
+  emit('send', {
+    type: 'draw',
+    x, y,
+    pressure: e.pressure ?? 1,
+    phase: 'move',
+    color: strokeColor.value,
+    size: strokeSize.value
+  })
 }
 
 function onPointerUp(e: PointerEvent) {
   if (!isDrawing) return
   isDrawing = false
   const { x, y } = getPos(e)
-  emit('send', { type: 'draw', x, y, pressure: 0, phase: 'end' })
+  emit('send', {
+    type: 'draw',
+    x, y,
+    pressure: 0,
+    phase: 'end',
+    color: strokeColor.value,
+    size: strokeSize.value
+  })
 }
 
 // Render received background frame

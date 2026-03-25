@@ -27,6 +27,8 @@ export * from './output/AllPeersOutputNode'
 export * from './utility/DebugNode'
 export * from './utility/CommentNode'
 export * from './utility/VariableNode'
+export * from './utility/GetVariableNode'
+export * from './utility/SetVariableNode'
 
 // Auto-register all nodes
 import { NodeRegistry } from './NodeRegistry'
@@ -45,6 +47,8 @@ import { AllPeersOutputNode } from './output/AllPeersOutputNode'
 import { DebugNode } from './utility/DebugNode'
 import { CommentNode } from './utility/CommentNode'
 import { VariableNode } from './utility/VariableNode'
+import { GetVariableNode } from './utility/GetVariableNode'
+import { SetVariableNode } from './utility/SetVariableNode'
 import { CanvasTransformNode } from './processor/CanvasTransformNode'
 import { CanvasMergeNode } from './processor/CanvasMergeNode'
 
@@ -65,6 +69,8 @@ export function registerAllNodes(): void {
   NodeRegistry.register(DebugNode)
   NodeRegistry.register(CommentNode)
   NodeRegistry.register(VariableNode)
+  NodeRegistry.register(GetVariableNode)
+  NodeRegistry.register(SetVariableNode)
   NodeRegistry.register(CanvasTransformNode)
   NodeRegistry.register(CanvasMergeNode)
 }

@@ -1,6 +1,7 @@
 import { BaseNode } from '../BaseNode'
 import { DataType, NodeCategory, type NodeMetadata } from '../types'
 import { useVariableStore } from '../../stores/variableStore'
+import * as Tone from 'tone'
 
 /**
  * Variable Node
@@ -56,23 +57,36 @@ export class VariableNode extends BaseNode {
       type: 'boolean',
       defaultValue: true
     })
+
+    // Parameter: persistence behavior for writes from this node
+    this.addParameter({
+      id: 'persist',
+      name: 'Persist Variable',
+      type: 'boolean',
+      defaultValue: true
+    })
   }
 
   process(): void {
     const varName = String(this.getParameter('name') || 'myVariable')
     const autoInit = Boolean(this.getParameter('autoInit'))
+    const persistParam = Boolean(this.getParameter('persist'))
     const defaultValue = this.getParameter('defaultValue')
 
     // Check if we should write (set input is connected and has a value)
     const setValue = this.getInputValue('set')
     if (setValue !== undefined && setValue !== null) {
-      this.variableStore.setVariable(varName, setValue)
+      this.variableStore.setVariable(varName, setValue, {
+        persist: persistParam && this.shouldPersistValue(setValue)
+      })
     }
 
     // Auto-initialize if variable doesn't exist
     if (autoInit && !this.variableStore.hasVariable(varName)) {
       const parsedDefault = this.parseDefaultValue(defaultValue)
-      this.variableStore.setVariable(varName, parsedDefault)
+      this.variableStore.setVariable(varName, parsedDefault, {
+        persist: persistParam && this.shouldPersistValue(parsedDefault)
+      })
     }
 
     // Read current value
@@ -97,6 +111,22 @@ export class VariableNode extends BaseNode {
       // If parsing fails, return as string
       return value
     }
+  }
+
+  private shouldPersistValue(value: any): boolean {
+    if (value === null || value === undefined) return true
+    if (typeof value === 'number' || typeof value === 'string' || typeof value === 'boolean') return true
+    if (value instanceof OffscreenCanvas) return false
+    if (value instanceof Tone.ToneAudioNode) return false
+    if (typeof value === 'object') {
+      try {
+        structuredClone(value)
+        return true
+      } catch {
+        return false
+      }
+    }
+    return false
   }
 
   toJSON() {

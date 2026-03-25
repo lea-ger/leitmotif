@@ -104,6 +104,16 @@
             />
 
             <!-- String Input -->
+            <textarea
+              v-else-if="param.type === 'string' && isCelExpressionParam(param.id)"
+              :value="getParameterValue(param.id)"
+              @input="updateParameter(param.id, ($event.target as HTMLTextAreaElement).value)"
+              class="textarea textarea-bordered w-full min-h-28 text-sm font-mono leading-relaxed disabled:opacity-50 disabled:cursor-not-allowed"
+              :class="'bg-base-300/70 border-primary/20'"
+              spellcheck="false"
+              :disabled="param.exposedAsInput && isParameterConnected(param.id)"
+            />
+
             <input 
               v-else-if="param.type === 'string'"
               type="text"
@@ -231,6 +241,12 @@ function getParameterValue(parameterId: string): any {
 function updateParameter(parameterId: string, value: any): void {
   if (!props.selectedNode) return
   props.selectedNode.setParameter(parameterId, value)
+}
+
+function isCelExpressionParam(parameterId: string): boolean {
+  const type = props.selectedNode?.type
+  return (type === 'expression' && parameterId === 'expression')
+    || (type === 'if' && parameterId === 'condition')
 }
 
 function toggleParameterExposure(parameterId: string): void {

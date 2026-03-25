@@ -72,14 +72,14 @@ export type ClientToHostMessage =
   | { type: 'sensors'; ax: number; ay: number; az: number; alpha: number; beta: number; gamma: number }
   | { type: 'keydown'; note: string; frequency: number; velocity: number }
   | { type: 'keyup';   note: string }
-  | { type: 'draw';    x: number; y: number; pressure: number; phase: 'start' | 'move' | 'end' }
+  | { type: 'draw';    x: number; y: number; pressure: number; phase: 'start' | 'move' | 'end'; color?: string; size?: number; clear?: boolean }
   | { type: 'touchpad'; x: number; y: number; force: number; active: boolean }
 
 // ---------------------------------------------------------------------------
 // Default capability definitions
 // ---------------------------------------------------------------------------
 
-export const DEFAULT_CAPABILITIES: Record<string, Omit<PeerCapability, 'enabled'>> = {
+export const DEFAULT_CAPABILITIES: Record<CapabilityType, Omit<PeerCapability, 'enabled'>> = {
   [CapabilityType.GYRO]: {
     type: CapabilityType.GYRO,
     ports: [

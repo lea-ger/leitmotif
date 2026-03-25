@@ -249,7 +249,9 @@ export const useGraphStore = defineStore('graph', () => {
                     const params: Record<string, any> = {}
                     if ((node as any).parameters instanceof Map) {
                         ;(node as any).parameters.forEach((value: any, key: string) => {
-                            params[key] = value
+                            if (isCloneableForStorage(value)) {
+                                params[key] = value
+                            }
                         })
                     }
 
@@ -298,7 +300,9 @@ export const useGraphStore = defineStore('graph', () => {
                 const params: Record<string, any> = {}
                 if ((node as any).parameters instanceof Map) {
                     ;(node as any).parameters.forEach((value: any, key: string) => {
-                        params[key] = value
+                        if (isCloneableForStorage(value)) {
+                            params[key] = value
+                        }
                     })
                 }
 
@@ -570,3 +574,18 @@ export const useGraphStore = defineStore('graph', () => {
         uploadGraph
     }
 })
+    function isCloneableForStorage(value: any): boolean {
+        if (value === undefined) return false
+        if (
+            value === null ||
+            typeof value === 'number' ||
+            typeof value === 'string' ||
+            typeof value === 'boolean'
+        ) return true
+        try {
+            structuredClone(value)
+            return true
+        } catch {
+            return false
+        }
+    }

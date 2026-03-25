@@ -10,6 +10,13 @@ export const usePeerStore = defineStore('peer', () => {
   const peers = ref<Map<string, PeerMetadata>>(new Map())
   const dataStreams = ref<Map<string, Map<string, any>>>(new Map()) // peerId -> capabilityType -> latest data
   let hostPeer: Peer | null = null
+  type DrawCanvasState = {
+    canvas: OffscreenCanvas
+    ctx: OffscreenCanvasRenderingContext2D
+    lastX: number
+    lastY: number
+  }
+  const drawCanvasStates = new Map<string, DrawCanvasState>()
 
   type PeerAudioState = {
     source: Tone.ToneAudioNode | null
@@ -56,6 +63,7 @@ export const usePeerStore = defineStore('peer', () => {
    */
   const removePeer = (peerId: string) => {
     stopPeerAudio(peerId)
+    drawCanvasStates.delete(peerId)
     peers.value.delete(peerId)
     dataStreams.value.delete(peerId)
     saveToStorage().catch(e => console.error('Failed to save after removePeer:', e))
@@ -94,7 +102,10 @@ export const usePeerStore = defineStore('peer', () => {
     if (peer) {
       peer.connected = connected
       peer.lastSeen = new Date()
-      if (!connected) stopPeerAudio(peerId)
+      if (!connected) {
+        stopPeerAudio(peerId)
+        drawCanvasStates.delete(peerId)
+      }
       else ensurePeerAudioCall(peerId)
     }
   }
@@ -254,14 +265,15 @@ export const usePeerStore = defineStore('peer', () => {
     }
   }
 
-  // Capabilities that are automatically driven by layout selection
-  const LAYOUT_CAPS: Record<LayoutName, CapabilityType | null> = {
-    empty:    null,
-    keyboard: CT.KEYBOARD,
-    canvas:   CT.DRAW,
-    touchpad: CT.TOUCHPAD
+  // Capabilities automatically driven by layout selection
+  const LAYOUT_CAPS: Record<LayoutName, CapabilityType[]> = {
+    empty:    [],
+    keyboard: [CT.KEYBOARD],
+    // Canvas layout sends draw events and exposes reconstructed canvas.frame
+    canvas:   [CT.DRAW, CT.CANVAS],
+    touchpad: [CT.TOUCHPAD]
   }
-  const LAYOUT_ONLY_CAPS = new Set<CapabilityType>([CT.KEYBOARD, CT.DRAW, CT.TOUCHPAD])
+  const LAYOUT_ONLY_CAPS = new Set<CapabilityType>([CT.KEYBOARD, CT.DRAW, CT.TOUCHPAD, CT.CANVAS])
 
   const setPeerLayout = (peerId: string, layout: LayoutName): void => {
     const peer = peers.value.get(peerId)
@@ -271,9 +283,9 @@ export const usePeerStore = defineStore('peer', () => {
     peers.value.set(peerId, { ...toRaw(peer), currentLayout: layout })
 
     // Auto-enable the layout-specific capability, disable the others
-    const targetCap = LAYOUT_CAPS[layout]
+    const targetCaps = new Set<CapabilityType>(LAYOUT_CAPS[layout])
     for (const cap of LAYOUT_ONLY_CAPS) {
-      setCapabilityEnabled(peerId, cap, cap === targetCap)
+      setCapabilityEnabled(peerId, cap, targetCaps.has(cap))
     }
 
     sendToPeer(peerId, { type: 'layout', layout })
@@ -289,6 +301,84 @@ export const usePeerStore = defineStore('peer', () => {
         timestamp: Date.now(),
         data
       })
+
+      // Reconstruct a peer canvas frame from draw events so canvas.frame becomes usable.
+      if (capabilityType === 'draw' && data && typeof data === 'object') {
+        if (data.clear) {
+          const state = drawCanvasStates.get(peerId)
+          if (state) {
+            state.ctx.clearRect(0, 0, state.canvas.width, state.canvas.height)
+            peerStreams.set('canvas', {
+              timestamp: Date.now(),
+              data: { frame: state.canvas }
+            })
+          }
+          return
+        }
+
+        const x = Number(data.x)
+        const y = Number(data.y)
+        const pressure = Number(data.pressure ?? 1)
+        const phase = String(data.phase ?? 'move')
+        const color = typeof data.color === 'string' ? data.color : '#ffffff'
+        const size = Number.isFinite(Number(data.size)) ? Number(data.size) : null
+
+        if (Number.isFinite(x) && Number.isFinite(y)) {
+          let state = drawCanvasStates.get(peerId)
+          if (!state) {
+            const canvas = new OffscreenCanvas(1920, 1080)
+            const ctx = canvas.getContext('2d')
+            if (ctx) {
+              ctx.clearRect(0, 0, canvas.width, canvas.height)
+              state = { canvas, ctx, lastX: x, lastY: y }
+              drawCanvasStates.set(peerId, state)
+            }
+          }
+          if (state) {
+            const { ctx } = state
+            const lineWidth = size !== null
+              ? Math.max(1, Math.min(64, size))
+              : Math.max(1, Math.min(16, 2 + pressure * 6))
+            ctx.strokeStyle = color
+            ctx.lineWidth = lineWidth
+            ctx.lineCap = 'round'
+            ctx.lineJoin = 'round'
+
+            if (phase === 'start') {
+              state.lastX = x
+              state.lastY = y
+              ctx.beginPath()
+              ctx.moveTo(x, y)
+              // Ensure taps/short gestures are visible even without move events.
+              ctx.beginPath()
+              ctx.arc(x, y, Math.max(1, lineWidth * 0.5), 0, Math.PI * 2)
+              ctx.fillStyle = color
+              ctx.fill()
+            } else if (phase === 'end') {
+              ctx.beginPath()
+              ctx.moveTo(state.lastX, state.lastY)
+              ctx.lineTo(x, y)
+              ctx.stroke()
+              state.lastX = x
+              state.lastY = y
+            } else {
+              ctx.beginPath()
+              ctx.moveTo(state.lastX, state.lastY)
+              ctx.lineTo(x, y)
+              ctx.stroke()
+              state.lastX = x
+              state.lastY = y
+            }
+
+            peerStreams.set('canvas', {
+              timestamp: Date.now(),
+              data: {
+                frame: state.canvas
+              }
+            })
+          }
+        }
+      }
     }
 
     // Update last seen
@@ -334,6 +424,7 @@ export const usePeerStore = defineStore('peer', () => {
    */
   const clearAll = () => {
     for (const peerId of peerAudioStates.keys()) stopPeerAudio(peerId)
+    drawCanvasStates.clear()
     peers.value.clear()
     dataStreams.value.clear()
     saveToStorage().catch(e => console.error('Failed to clear peer storage:', e))
@@ -344,17 +435,45 @@ export const usePeerStore = defineStore('peer', () => {
    */
   const saveToStorage = async (): Promise<void> => {
     try {
-      const peersData = Array.from(peers.value.values()).map(peer => ({
-        id: peer.id,
-        name: peer.name,
-        connected: false,
-        lastSeen: peer.lastSeen.toISOString(),
-        isMock: peer.isMock || false,
-        capabilities: peer.capabilities
-      }))
+      const peersData = Array.from(peers.value.values()).map((peer) => {
+        const rawPeer = toRaw(peer)
+        const capabilities = (rawPeer.capabilities || []).map((cap: any) => {
+          const rawCap = toRaw(cap)
+          return {
+            type: rawCap.type,
+            enabled: Boolean(rawCap.enabled),
+            ports: Array.isArray(rawCap.ports)
+              ? rawCap.ports.map((p: any) => ({
+                  name: String(p.name),
+                  dataType: String(p.dataType),
+                  description: p.description ? String(p.description) : undefined
+                }))
+              : [],
+            config: rawCap.config ? safeClone(rawCap.config) : undefined
+          }
+        })
+
+        return {
+          id: String(rawPeer.id),
+          name: String(rawPeer.name),
+          connected: false,
+          lastSeen: rawPeer.lastSeen instanceof Date ? rawPeer.lastSeen.toISOString() : new Date().toISOString(),
+          isMock: Boolean(rawPeer.isMock),
+          currentLayout: rawPeer.currentLayout,
+          capabilities
+        }
+      })
       await storage.setItem('leitmotif-peers', peersData)
     } catch (error) {
       console.error('Failed to save peers:', error)
+    }
+  }
+
+  const safeClone = (value: any): any => {
+    try {
+      return structuredClone(toRaw(value))
+    } catch {
+      return undefined
     }
   }
 
@@ -385,6 +504,7 @@ export const usePeerStore = defineStore('peer', () => {
           connected: false,
           lastSeen: new Date(peerData.lastSeen),
           isMock: peerData.isMock || false,
+          currentLayout: peerData.currentLayout,
           capabilities: peerData.capabilities
         }
         addPeer(peer)

@@ -81,6 +81,13 @@
                 >
                   <Icon icon="ph:x" class="text-xs" />
                 </button>
+                <button
+                  class="btn btn-ghost btn-xs btn-square"
+                  @click="togglePersist(variable.name, variable.persist)"
+                  :title="variable.persist ? 'Disable persistence' : 'Enable persistence'"
+                >
+                  <Icon :icon="variable.persist ? 'ph:floppy-disk' : 'ph:clock-counter-clockwise'" class="text-xs" />
+                </button>
               </div>
             </div>
 
@@ -92,6 +99,9 @@
             <!-- Last updated -->
             <div class="text-[10px] text-base-content/40 mt-1">
               Updated {{ formatTime(variable.lastUpdated) }}
+            </div>
+            <div class="text-[10px] mt-1" :class="variable.persist ? 'text-success/70' : 'text-warning/70'">
+              {{ variable.persist ? 'persistent' : 'runtime-only' }}
             </div>
           </div>
         </div>
@@ -169,6 +179,12 @@ function formatTime(date: Date): string {
   if (diff < 3600000) return `${Math.floor(diff / 60000)}m ago`
   if (diff < 86400000) return `${Math.floor(diff / 3600000)}h ago`
   return `${Math.floor(diff / 86400000)}d ago`
+}
+
+function togglePersist(name: string, persist: boolean): void {
+  const info = variableStore.getVariableInfo(name)
+  if (!info) return
+  variableStore.setVariable(name, info.value, { persist: !persist })
 }
 </script>
 
