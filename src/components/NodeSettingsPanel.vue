@@ -247,6 +247,7 @@ function isCelExpressionParam(parameterId: string): boolean {
   const type = props.selectedNode?.type
   return (type === 'expression' && parameterId === 'expression')
     || (type === 'if' && parameterId === 'condition')
+    || (type === 'get-variable' && parameterId === 'default')
 }
 
 function toggleParameterExposure(parameterId: string): void {

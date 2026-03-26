@@ -1,6 +1,6 @@
 import { BaseNode } from '../BaseNode'
 import { DataType, NodeCategory, type NodeMetadata } from '../types'
-import { evaluate, parse, type ParseResult } from 'cel-js'
+import { parse } from '@marcbachmann/cel-js'
 import { useVariableStore } from '../../stores/variableStore'
 
 /**
@@ -8,17 +8,19 @@ import { useVariableStore } from '../../stores/variableStore'
  * Evaluates a Common Expression Language (CEL) expression.
  * Variables a, b, c are bound to the corresponding input ports.
  * Global variables from the Variable Store are also available.
+ * Use has(ctx, 'variableName') to check if a variable exists.
  *
  * Example expressions:
  *   a + b
  *   a * 2.0
  *   a > b ? a : b
+ *   has(ctx, 'myVar') ? myVar : 'default'
  *   outputWidth / 4
  */
 export class ExpressionNode extends BaseNode {
   private variableStore = useVariableStore()
   private cachedExpression: string = ''
-  private cachedCst: ParseResult | null = null
+  private cachedEvaluator: ((context: any) => any) | null = null
 
   constructor(id?: string) {
     super('expression', id)
@@ -60,10 +62,15 @@ export class ExpressionNode extends BaseNode {
     // Re-parse only when expression changes
     if (expr !== this.cachedExpression) {
       this.cachedExpression = expr
-      this.cachedCst = parse(expr)
+      try {
+        this.cachedEvaluator = parse(expr)
+      } catch (error) {
+        console.error('[ExpressionNode] Parse error:', error, 'Expression:', expr)
+        this.cachedEvaluator = null
+      }
     }
 
-    if (!this.cachedCst || !this.cachedCst.isSuccess) {
+    if (!this.cachedEvaluator) {
       this.setOutputValue('result', undefined)
       return
     }
@@ -88,15 +95,19 @@ export class ExpressionNode extends BaseNode {
         }
       }
 
-      const result = evaluate(this.cachedCst.cst, context)
+      // Add context reference for has() function
+      context.ctx = context
+
+      const result = this.cachedEvaluator(context)
       this.setOutputValue('result', result)
-    } catch {
+    } catch (error) {
+      console.error('[ExpressionNode] Evaluation error:', error, 'Expression:', expr)
       this.setOutputValue('result', undefined)
     }
   }
 
   cleanup(): void {
-    this.cachedCst = null
+    this.cachedEvaluator = null
     this.cachedExpression = ''
   }
 }

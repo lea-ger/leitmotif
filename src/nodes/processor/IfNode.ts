@@ -1,6 +1,6 @@
 import { BaseNode } from '../BaseNode'
 import { DataType, NodeCategory, type NodeMetadata } from '../types'
-import { evaluate, parse, type ParseResult } from 'cel-js'
+import { parse } from '@marcbachmann/cel-js'
 import { useVariableStore } from '../../stores/variableStore'
 
 /**
@@ -18,7 +18,7 @@ import { useVariableStore } from '../../stores/variableStore'
 export class IfNode extends BaseNode {
   private variableStore = useVariableStore()
   private cachedCondition: string = ''
-  private cachedCst: ParseResult | null = null
+  private cachedEvaluator: ((context: any) => any) | null = null
 
   constructor(id?: string) {
     super('if', id)
@@ -64,10 +64,15 @@ export class IfNode extends BaseNode {
     // Re-parse only when condition expression changes
     if (conditionExpr !== this.cachedCondition) {
       this.cachedCondition = conditionExpr
-      this.cachedCst = parse(conditionExpr)
+      try {
+        this.cachedEvaluator = parse(conditionExpr)
+      } catch (error) {
+        console.error('[IfNode] Parse error:', error, 'Condition:', conditionExpr)
+        this.cachedEvaluator = null
+      }
     }
 
-    if (!this.cachedCst || !this.cachedCst.isSuccess) {
+    if (!this.cachedEvaluator) {
       this.setOutputValue('onTrue', null)
       this.setOutputValue('onFalse', value)
       return
@@ -92,8 +97,9 @@ export class IfNode extends BaseNode {
         }
       }
 
-      result = Boolean(evaluate(this.cachedCst.cst, context))
-    } catch {
+      result = Boolean(this.cachedEvaluator(context))
+    } catch (error) {
+      console.error('[IfNode] Condition evaluation error:', error, 'Condition:', conditionExpr)
       result = false
     }
 
@@ -102,7 +108,7 @@ export class IfNode extends BaseNode {
   }
 
   cleanup(): void {
-    this.cachedCst = null
+    this.cachedEvaluator = null
     this.cachedCondition = ''
   }
 }

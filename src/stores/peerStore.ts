@@ -305,13 +305,17 @@ export const usePeerStore = defineStore('peer', () => {
       // Reconstruct a peer canvas frame from draw events so canvas.frame becomes usable.
       if (capabilityType === 'draw' && data && typeof data === 'object') {
         if (data.clear) {
+          console.log('[PeerStore] Clear canvas for peer:', peerId)
           const state = drawCanvasStates.get(peerId)
           if (state) {
             state.ctx.clearRect(0, 0, state.canvas.width, state.canvas.height)
+            console.log('[PeerStore] Cleared canvas:', state.canvas.width, 'x', state.canvas.height)
             peerStreams.set('canvas', {
               timestamp: Date.now(),
               data: { frame: state.canvas }
             })
+          } else {
+            console.warn('[PeerStore] No canvas state found for peer:', peerId)
           }
           return
         }
