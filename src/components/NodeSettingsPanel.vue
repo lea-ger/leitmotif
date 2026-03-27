@@ -38,20 +38,25 @@
 
     <!-- Content -->
     <div class="flex-1 overflow-y-auto p-4 space-y-2">
-      <!-- Available Variables Hint (for Expression and If nodes) -->
+      <!-- Available Variables Hint -->
       <div 
         v-if="showVariableHint && availableVariables.length > 0"
         class="alert alert-info text-xs p-2 mb-3"
       >
         <Icon icon="ph:database" class="text-sm" />
         <div class="flex-1">
-          <div class="font-semibold mb-1">Available Variables:</div>
+          <div class="font-semibold mb-1">
+            {{ selectedNode?.type === 'get-variable' || selectedNode?.type === 'set-variable' ? 'Existing Variables:' : 'Available Variables:' }}
+          </div>
           <div class="font-mono flex flex-wrap gap-1">
-            <span 
+            <button
               v-for="varName in availableVariables" 
               :key="varName"
-              class="badge badge-xs badge-success"
-            >{{ varName }}</span>
+              type="button"
+              @click="fillVariableName(varName)"
+              class="badge badge-xs badge-success hover:badge-primary cursor-pointer transition-colors"
+              :title="'Click to use ' + varName"
+            >{{ varName }}</button>
           </div>
         </div>
       </div>
@@ -251,7 +256,8 @@ const parameters = computed(() => {
 })
 
 const showVariableHint = computed(() => {
-  return props.selectedNode?.type === 'expression' || props.selectedNode?.type === 'if'
+  const type = props.selectedNode?.type
+  return type === 'expression' || type === 'if' || type === 'get-variable' || type === 'set-variable'
 })
 
 const availableVariables = computed(() => {
@@ -287,6 +293,15 @@ function formatDescription(description: string): string {
     /(https?:\/\/[^\s]+)/g,
     '<a href="$1" target="_blank" rel="noopener noreferrer" class="underline hover:opacity-80">$1</a>'
   )
+}
+
+function fillVariableName(varName: string): void {
+  if (!props.selectedNode) return
+  
+  // For get-variable and set-variable, fill the 'name' parameter
+  if (props.selectedNode.type === 'get-variable' || props.selectedNode.type === 'set-variable') {
+    updateParameter('name', varName)
+  }
 }
 
 function toggleParameterExposure(parameterId: string): void {
