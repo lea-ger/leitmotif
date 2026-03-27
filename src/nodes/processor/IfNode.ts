@@ -47,7 +47,8 @@ export class IfNode extends BaseNode {
       id: 'condition',
       name: 'Condition',
       type: 'string',
-      defaultValue: 'value > 0'
+      defaultValue: 'value > 0',
+      description: 'CEL expression that evaluates to true/false. Variables: value, a, b, and globals. Learn more: https://github.com/google/cel-spec'
     })
   }
 

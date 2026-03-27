@@ -75,21 +75,39 @@
             :title="param.exposedAsInput ? 'Hide input port' : 'Expose as input port'"
           />
           <div class="flex-1 min-w-0">
-            <label class="text-xs font-medium block mb-1">
-              {{ param.name }}
-              <span
-                v-if="param.exposedAsInput"
-                class="ml-1 inline-flex items-center rounded px-1 py-0 text-[10px] font-semibold"
-                :style="{
-                  background: 'color-mix(in srgb, var(--node-color) 20%, transparent)',
-                  color: nodeColor,
-                  border: '1px solid color-mix(in srgb, var(--node-color) 40%, transparent)'
-                }"
+            <div class="flex items-center justify-between mb-1">
+              <label class="text-xs font-medium">
+                {{ param.name }}
+                <span
+                  v-if="param.exposedAsInput"
+                  class="ml-1 inline-flex items-center rounded px-1 py-0 text-[10px] font-semibold"
+                  :style="{
+                    background: 'color-mix(in srgb, var(--node-color) 20%, transparent)',
+                    color: nodeColor,
+                    border: '1px solid color-mix(in srgb, var(--node-color) 40%, transparent)'
+                  }"
+                >
+                  input
+                </span>
+              </label>
+              <button
+                v-if="param.description"
+                type="button"
+                @click="toggleParameterHelp(param.id)"
+                class="text-sm opacity-60 hover:opacity-100 transition-opacity"
+                :title="parameterHelpExpanded[param.id] ? 'Hide help' : 'Show help'"
               >
-                input
-              </span>
-            </label>
-            
+                <Icon
+                    v-if="parameterHelpExpanded[param.id]"
+                    icon="ph:lightbulb-fill"
+                />
+                <Icon
+                    v-else
+                    icon="ph:lightbulb"
+                  />
+              </button>
+            </div>
+                        
             <!-- Number Input -->
             <input 
               v-if="param.type === 'number'"
@@ -190,6 +208,13 @@
               <Icon icon="ph:plug" />
               Connected (using input value)
             </div>
+
+            <!-- Help text collapse -->
+            <div
+                v-if="param.description && parameterHelpExpanded[param.id]"
+                class="text-xs leading-relaxed opacity-70 mt-2 p-2 bg-base-300/50 rounded border border-base-content/10"
+                v-html="formatDescription(param.description)"
+            ></div>
           </div>
         </div>
       </div>
@@ -198,7 +223,7 @@
 </template>
 
 <script setup lang="ts">
-import {computed} from 'vue'
+import {computed, reactive} from 'vue'
 import {Icon} from '@iconify/vue'
 import type {BaseNode} from '../nodes/BaseNode'
 import type {NodeMetadata} from '../nodes/types'
@@ -217,6 +242,8 @@ defineEmits<{
 
 const graphStore = useGraphStore()
 const variableStore = useVariableStore()
+
+const parameterHelpExpanded = reactive<Record<string, boolean>>({})
 
 const parameters = computed(() => {
   if (!props.selectedNode) return []
@@ -248,6 +275,18 @@ function isCelExpressionParam(parameterId: string): boolean {
   return (type === 'expression' && parameterId === 'expression')
     || (type === 'if' && parameterId === 'condition')
     || (type === 'get-variable' && parameterId === 'default')
+}
+
+function toggleParameterHelp(parameterId: string): void {
+  parameterHelpExpanded[parameterId] = !parameterHelpExpanded[parameterId]
+}
+
+function formatDescription(description: string): string {
+  // Convert URLs to clickable links
+  return description.replace(
+    /(https?:\/\/[^\s]+)/g,
+    '<a href="$1" target="_blank" rel="noopener noreferrer" class="underline hover:opacity-80">$1</a>'
+  )
 }
 
 function toggleParameterExposure(parameterId: string): void {

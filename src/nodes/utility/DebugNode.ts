@@ -19,7 +19,7 @@ export class DebugNode extends BaseNode {
       type: 'debug',
       category: NodeCategory.UTILITY,
       displayName: 'Debug Logger',
-      description: 'Logs data to console for debugging',
+      description: 'Logs input data to the browser console for debugging (press F12 to open).',
       color: '#6b7280',
       icon: 'ph:bug'
     }

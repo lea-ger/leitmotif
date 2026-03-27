@@ -36,14 +36,16 @@ export class GetVariableNode extends BaseNode {
       id: 'name',
       name: 'Variable Name',
       type: 'string',
-      defaultValue: ''
+      defaultValue: '',
+      description: 'Name of the variable to read'
     })
 
     this.addParameter({
       id: 'default',
       name: 'Default Value (CEL)',
       type: 'string',
-      defaultValue: ''
+      defaultValue: '',
+      description: 'CEL expression to evaluate if variable doesn\'t exist. Learn more: https://github.com/google/cel-spec'
     })
   }
 

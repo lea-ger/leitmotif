@@ -48,7 +48,8 @@ export class ExpressionNode extends BaseNode {
       id: 'expression',
       name: 'Expression',
       type: 'string',
-      defaultValue: 'a'
+      defaultValue: 'a',
+      description: 'CEL expression using inputs a, b, c and global variables. Learn more: https://github.com/google/cel-spec'
     })
   }
 

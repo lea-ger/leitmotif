@@ -33,14 +33,16 @@ export class SetVariableNode extends BaseNode {
       id: 'name',
       name: 'Variable Name',
       type: 'string',
-      defaultValue: ''
+      defaultValue: '',
+      description: 'Name of the variable to store the value in'
     })
 
     this.addParameter({
       id: 'persist',
       name: 'Persist',
       type: 'boolean',
-      defaultValue: true
+      defaultValue: false,
+      description: 'Save variable to disk (disable this for temporary runtime objects like canvases)'
     })
   }
 
