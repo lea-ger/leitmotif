@@ -26,11 +26,11 @@ export class LoopNode extends BaseNode {
 
   initialize(): void {
     this.addInput('list', DataType.OBJECT)
-    this.addInput('index', DataType.NUMERIC)
+    this.addInput('externalIndex', DataType.NUMERIC)  // Renamed from 'index' to avoid conflict
     this.addInput('reset', DataType.EVENT)
 
     this.addOutput('item', DataType.ANY)
-    this.addOutput('index', DataType.NUMERIC)
+    this.addOutput('index', DataType.NUMERIC)  // Output keeps the name 'index'
     this.addOutput('length', DataType.NUMERIC)
     this.addOutput('done', DataType.EVENT)
 
@@ -55,6 +55,7 @@ export class LoopNode extends BaseNode {
 
   process(): void {
     const list: unknown[] | null = this.getInputValue('list')
+    
     if (!Array.isArray(list) || list.length === 0) {
       this.setOutputValue('item', undefined)
       this.setOutputValue('index', 0)
@@ -76,7 +77,7 @@ export class LoopNode extends BaseNode {
     let idx: number
 
     if (mode === 'index') {
-      const extIndex = this.getInputValue('index')
+      const extIndex = this.getInputValue('externalIndex')  // Updated to use renamed port
       idx = typeof extIndex === 'number' ? Math.floor(extIndex) : 0
       idx = Math.max(0, Math.min(len - 1, idx))
     } else {

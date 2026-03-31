@@ -71,27 +71,25 @@ export class GraphExecutor {
    */
   private executeFrame(): void {
     try {
-      // Propagate data through connections
-      this.connections.forEach(conn => {
-        const sourceNode = this.nodes.get(conn.sourceNodeId)
-        const targetNode = this.nodes.get(conn.targetNodeId)
-        
-        if (!sourceNode || !targetNode) return
-        
-        const sourcePort = sourceNode.getPortByName(conn.sourcePortName)
-        const targetPort = targetNode.getPortByName(conn.targetPortName)
-        
-        if (sourcePort && targetPort) {
-          // Copy value from source output to target input
-          targetPort.value = sourcePort.value
-        }
-      })
-      
-      // Execute nodes in order
+      // Execute nodes in order, propagating values after each node
       this.executionOrder.forEach(node => {
         if (node.enabled) {
           try {
             node.process()
+            
+            // Immediately propagate this node's outputs to downstream nodes
+            const outgoingConnections = this.connections.filter(c => c.sourceNodeId === node.id)
+            outgoingConnections.forEach(conn => {
+              const targetNode = this.nodes.get(conn.targetNodeId)
+              if (!targetNode) return
+              
+              const sourcePort = node.getPortByName(conn.sourcePortName)
+              const targetPort = targetNode.getPortByName(conn.targetPortName)
+              
+              if (sourcePort && targetPort) {
+                targetPort.value = sourcePort.value
+              }
+            })
           } catch (error) {
             console.error(`Error processing node ${node.id} (${node.type}):`, error)
           }

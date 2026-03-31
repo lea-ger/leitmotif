@@ -141,6 +141,10 @@ export abstract class BaseNode {
   protected setOutputValue(portName: string, value: any): void {
     const port = Array.from(this.outputs.values()).find(p => p.name === portName)
     if (port) {
+      // Convert BigInt to Number for JavaScript compatibility
+      if (typeof value === 'bigint') {
+        value = Number(value)
+      }
       // Never let Vue wrap objects (audio nodes, canvases, etc.) in reactive proxies
       port.value = (value && typeof value === 'object') ? markRaw(value) : value
     }

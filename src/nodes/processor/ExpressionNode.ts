@@ -82,7 +82,7 @@ export class ExpressionNode extends BaseNode {
 
     try {
       const context: Record<string, unknown> = {}
-      
+
       // Add input ports
       if (a !== undefined) context.a = a
       if (b !== undefined) context.b = b
