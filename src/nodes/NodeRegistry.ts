@@ -60,6 +60,13 @@ export class NodeRegistry {
   }
 
   /**
+   * Get all node metadata
+   */
+  static getAllMetadata(): NodeMetadata[] {
+    return Array.from(this.nodes.values()).map(node => node.metadata)
+  }
+
+  /**
    * Get nodes by category
    */
   static getByCategory(category: NodeCategory): RegisteredNode[] {

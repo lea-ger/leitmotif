@@ -17,6 +17,12 @@ const routes: RouteRecordRaw[] = [
     name: 'editor',
     component: () => import('./views/EditorView.vue'),
   },
+  {
+    path: '/learn/:docId?',
+    name: 'learn',
+    component: () => import('./views/LearnView.vue'),
+    props: true,
+  },
 ];
 
 export const router = createRouter({

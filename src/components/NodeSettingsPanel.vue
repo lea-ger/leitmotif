@@ -26,12 +26,22 @@
           </div>
           <h3 class="font-semibold">{{ selectedNode.name }}</h3>
         </div>
-        <button 
-          @click="$emit('close')" 
-          class="btn btn-sm btn-ghost btn-square"
-        >
-          <Icon icon="ph:x" />
-        </button>
+        <div class="flex gap-2">
+          <a 
+            :href="getDocLink()" 
+            target="_blank"
+            class="btn btn-sm btn-ghost btn-square"
+            title="View documentation"
+          >
+            <Icon icon="ph:book-open" />
+          </a>
+          <button 
+            @click="$emit('close')" 
+            class="btn btn-sm btn-ghost btn-square"
+          >
+            <Icon icon="ph:x" />
+          </button>
+        </div>
       </div>
       <p class="text-xs text-base-content/60 mt-1">{{ metadata?.description }}</p>
     </div>
@@ -302,6 +312,11 @@ function fillVariableName(varName: string): void {
   if (props.selectedNode.type === 'get-variable' || props.selectedNode.type === 'set-variable') {
     updateParameter('name', varName)
   }
+}
+
+function getDocLink(): string {
+  if (!props.selectedNode) return '/learn/node-reference'
+  return `/learn/node-reference#node-${props.selectedNode.type}`
 }
 
 function toggleParameterExposure(parameterId: string): void {

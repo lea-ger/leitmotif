@@ -37,6 +37,12 @@
             </ul>
           </details>
         </li>
+        <li>
+          <a @click="openLearnPage" title="Documentation & Tutorials">
+            <Icon icon="ph:book-open" class="text-base"/>
+            Learn
+          </a>
+        </li>
       </ul>
 
       <div class="flex-1"/>
@@ -330,6 +336,10 @@ function clearGraph() {
   if (confirm('Clear entire graph?')) {
     graphStore.clear()
   }
+}
+
+function openLearnPage() {
+  window.open('/learn', '_blank')
 }
 
 /**
