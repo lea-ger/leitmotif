@@ -45,6 +45,7 @@ export const GETTING_STARTED_DOCS: DocEntry[] = [
           <li><div class="badge badge-xs mr-1" style="background: ${getDataTypeColor(DataType.ANY)}"></div><strong>Gray</strong>: Any data (can be numbers, text, objects, etc.)</li>
         </ul>
         You can only connect ports with the same color. So, for example, the "canvas" output port of the image node above would only be able to connect to a canvas input port (or a "gray" input port).
+        You can remove a connection between ports again by clicking on the connection and then click on the "x" that should appear in the center of the dotted line.
         <br>
         <h4>And with that, you're basically good to go!</h4>
         You could now start with building a simple workflow by clicking on the output port of one node, and drag a connector to the input port of another. The result could look like this:
@@ -67,29 +68,30 @@ export const GETTING_STARTED_DOCS: DocEntry[] = [
             <li><strong class="mr-2">"Create Room" Button:</strong>Clicking this will create a room for peers to join your session.</li>
             <li><strong class="mr-2">Peer panel:</strong>Here, you can see the peers that have joined your session. See more in the following section about the <a href="#peer-panel">Peer Panel</a>.</li>            
             <li><strong class="mr-2">Node editor:</strong>Here, you can edit your graph by connecting the nodes with each other. You can open the <a href="#node-settings">node settings</a> by clicking on the nodes.</li>
-            <li><strong class="mr-2">Canvas output:</strong>This is a collapsible panel that shows the output of the canvas that you can draw on with some specific nodes.</li>            
+            <li><strong class="mr-2">Canvas output:</strong>This is a collapsible panel that shows the output of the canvas that you can draw on with some specific nodes. You can use the "maximize" button to open this output in a new tab.</li>            
             <li><strong class="mr-2">"Add node" button:</strong>This button will open up the <a href="#node-library">node library</a>.</li>            
       </ol>
       </p>
       <h2 id="peer-panel">Peer panel</h2>
       <p>
       The peer panel lists all the peers connected to you. It's updating live, and is running separately from the state of execution of your graph, which means that peers can always connect no matter if you hit "play" or "pause" in the toolbar.
-      For connected peers, you see the status of when the last time has been where they've been active. You can adjust some settings here too: You can change the layout that they see, as well as change which sensors of theirs you want to use.
-      For further details, you can see the chapter <a href="/learn/peers" target="_blank" rel="noopener noreferrer">"Working with peers"</a>.
-      You can also add a "Mock peer" here which lets you test your graph. 
+      For connected peers, you see the status of when the last time has been where they've been active.<br> You can adjust some settings here too: You can change the layout that they see, as well as change which sensors of theirs you want to use.
+      For further details, you can see the chapter <a href="/learn/peers" target="_blank" rel="noopener noreferrer">"Working with peers"</a>.<br><br>
+      You can also add a "Mock peer" here which lets you test your graph with some simulated values from a peer without actually connecting a device. This mock peer will generate some sensor data in a predetermined pattern. 
+      For example, for the accelerometer, it will generate a sine wave pattern that oscillates between -10 and 10 on the x and y axes, and -5 to 5 in the z axis.<br><br>
       When you want to place one of the peers into your graph, you can simply click on it and drag it into the editor.
       </p>
       <h2 id="node-settings">Node settings</h2>
       <img src="/edit-panel.png" alt="Node Settings Example" style="max-width: 100%; border: 1px solid #ccc; margin: 10px 0;">
       <p>Above is an example of an edit panel, in this case for the image node. As mentioned previously, this node draws an image onto a canvas, and this is where you can upload the image you want to see there!
-        There are some other parameters you can set here, like an "X" and a "Y" coordinate for where this image should be placed, or the scaling behavior, i.e. if the image should fill out the canvas, or fit onto it to be fully visible.
-        The "X" and "Y" parameters have the "input" checkbox activated. Looking at the node, a new input port for this value is active, named "param_x". That means you can connect an output port of another node to it and set its value dynamically!
+        <br>There are some other parameters you can set here, like an "X" and a "Y" coordinate for where this image should be placed, or the scaling behavior, i.e. if the image should fill out the canvas, or fit onto it to be fully visible.
+        <br>The "X" and "Y" parameters have the "input" checkbox activated. Looking at the node, a new input port for this value is active, named "param_x". That means you can connect an output port of another node to it and set its value dynamically!
       </p>
       <h2 id="node-library">Node library</h2>
       <p>
             In the node library, you can see all the nodes available to be freely placed in the editor (except for the nodes for singular peers - you need to look at the <a href="#peer-panel">Peer Panel</a> for those!).
-            They are grouped by function, and have a short description of what exactly it is they do.
-            When you want to place one of these nodes into your graph, start dragging it out by holding down left click. That way, the library modal should disappear and you can place the node inside the editor.
+            <br>They are grouped by function, and have a short description of what exactly it is they do.
+            <br><br>When you want to place one of these nodes into your graph, start dragging it out by holding down left click. That way, the library modal should disappear and you can place the node inside the editor.
       </p>
     `
   },
