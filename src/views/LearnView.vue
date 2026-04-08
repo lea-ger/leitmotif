@@ -102,7 +102,7 @@
                         <!-- Parameters -->
                         <div v-if="node.parameters.length > 0" class="mt-4">
                           <h5 class="text-xs font-semibold uppercase opacity-60 mb-2">Parameters</h5>
-                          <ul class="space-y-1">
+                          <ul clasfs="space-y-1">
                             <li v-for="param in node.parameters" :key="param.id" class="text-sm">
                               <span class="font-semibold">{{ param.name }}</span>
                               <span class="badge badge-xs badge-ghost text-shadow-xs ml-2">{{ param.type }}</span>
@@ -407,7 +407,8 @@ function getNodeDetails(nodeType: string): string | null {
 }
 
 :deep(.prose pre) {
-  background: oklch(var(--b3));
+  background: var(--color-accent);
+  color: var(--color-accent-content);
   padding: 1rem;
   border-radius: 0.5rem;
   overflow-x: auto;
@@ -415,7 +416,8 @@ function getNodeDetails(nodeType: string): string | null {
 }
 
 :deep(.prose code) {
-  background: oklch(var(--b3));
+  background: var(--color-accent);
+  color: var(--color-accent-content);
   padding: 0.125rem 0.25rem;
   border-radius: 0.25rem;
   font-size: 0.875rem;
