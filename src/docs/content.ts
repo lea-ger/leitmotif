@@ -345,13 +345,28 @@ width / height     // Calculate aspect ratio</code></pre>
     category: DOC_CATEGORIES.CONCEPTS,
     tags: ['concepts', 'peers'],
     content: `
-      <h2>The Engine</h2>
-      <p>The engine is the core runtime that executes your node graph. It manages data flow, variable storage and node processing.</p>
-      
-      <h3>The execution loop</h3>
-      <p>The execution of your project starts when you hit "play".</p>
-      
-      <h3>Variables</h3>
+        <p>Peers are other devices that connect to your session. They can be phones, tablets, or other computers. When they join, they can send data (like sensor readings) to your graph, and you can send data (like canvas or audio) back to them.</p>
+        
+        <h2>Working with a singular peer</h2>
+        
+        <p>You can test your logic either by using another device, by connecting via a private tab or a different browser, or by using a <em>Mock Peer</em>.<br>
+         Mock peers generate some artificial sensor readings for you.</p>
+        
+        <h2>Working with multiple peers using the "allPeers" node</h2>
+        
+        <p>Sometimes, you might not want to drag in each peer individually into your graph and connect them over and over. Maybe you have some automated process that should happen using peer data.</p>
+        
+        <img src="/all-peers-node.png" alt="All Peers Node Example" style="max-width: 100%; border: 1px solid #ccc; margin: 10px 0;">
+        <p>That's where the <strong>"All peers node"</strong> comes in handy: it puts out a list of all the data that all connected peers are sending over!</p>
+        <p>However, working with this data can be tricky. Some familiarity with programming can assist you here.</p>
+        <p>The node outputs a list of objects. The objects have a structure like this: <code>{peerId, peerName, timestamp, data}</code>.</p>
+        <p>Let's say you want to work with the peer's accelerometer data. You would need the <em>allAccelerometer</em> output. But, it is still wrapped in a list. You could use an <strong>Each</strong> node to loop through this data, or you could use a CEL expression, like so: <br>
+          <code>
+            allAccelerometer.map(peer => peer.data)
+          </code><br>
+          This would create a new list, containing just the sensor data, without the peerId and all the other stuff that's in the objects.
+          Note that the <code>peer.data</code> means that for each peer object we get the <em>"data"</em> attribute, which holds the actual sensor data we're interested in.
+        </p>
     `
   },
   {
