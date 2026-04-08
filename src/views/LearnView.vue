@@ -130,7 +130,7 @@
           </div>
 
           <!-- Regular documentation page -->
-          <div v-else class="prose prose-sm max-w-none" v-html="currentDoc.content"></div>
+          <div v-else class="prose prose-lg max-w-none" v-html="currentDoc.content"></div>
 
           <!-- Navigation -->
           <div class="flex justify-between mt-12 pt-8 border-t border-base-content/10">
