@@ -31,6 +31,27 @@
         </h3>
       </div>
 
+      <!-- Default Layout Setting -->
+      <div class="px-4 py-3 bg-base-300/50 border-b border-base-content/10">
+        <div class="text-xs text-base-content/50 mb-2 flex items-center gap-1">
+          <Icon icon="ph:star" class="text-sm" />
+          Default Layout for New Peers
+        </div>
+        <div class="grid grid-cols-4 gap-1">
+          <button
+            v-for="layout in LAYOUTS"
+            :key="layout.value"
+            class="btn btn-xs flex-col gap-0.5 h-auto py-1.5"
+            :class="graphStore.defaultPeerLayout === layout.value ? 'btn-primary' : 'btn-ghost'"
+            @click.stop="setDefaultLayout(layout.value)"
+            :title="layout.label + ' (Default)'"
+          >
+            <Icon :icon="layout.icon" class="text-sm" />
+            <span class="text-[9px] leading-none">{{ layout.label }}</span>
+          </button>
+        </div>
+      </div>
+
       <!-- Scrollable body -->
       <div class="overflow-y-auto flex-1 p-4 flex flex-col gap-3">
         <!-- All Peers drag node -->
@@ -206,6 +227,15 @@ function updateCapability(peerId: string, capabilityType: CapabilityType, enable
 function setLayout(peerId: string, layout: LayoutName) {
   peerStore.setPeerLayout(peerId, layout)
   graphStore.syncPeerNodePorts(peerId)
+}
+
+function setDefaultLayout(layout: LayoutName) {
+  console.log('[PeerPanel] Setting default layout to:', layout)
+  graphStore.defaultPeerLayout = layout
+  console.log('[PeerPanel] After setting, value is:', graphStore.defaultPeerLayout)
+  graphStore.saveToStorage().then(() => {
+    console.log('[PeerPanel] Save complete')
+  })
 }
 
 const LAYOUTS: { value: LayoutName; label: string; icon: string }[] = [

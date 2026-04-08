@@ -4,6 +4,7 @@ import type {Connection as FlowConnection, Edge as FlowEdge, Node as FlowNode} f
 import {BaseNode} from '../nodes/BaseNode'
 import {NodeRegistry} from '../nodes/NodeRegistry'
 import {canConnect, type Connection, generateId} from '../nodes/types'
+import type { LayoutName } from './types/peer'
 import * as storage from '../utils/storage'
 
 /**
@@ -27,6 +28,9 @@ export const useGraphStore = defineStore('graph', () => {
 
     // Nodes with preview enabled
     const nodePreviewEnabled = ref<Set<string>>(new Set())
+
+    // Graph settings
+    const defaultPeerLayout = ref<LayoutName>('empty')
 
     /**
      * Add a new node to the graph
@@ -282,7 +286,10 @@ export const useGraphStore = defineStore('graph', () => {
                     }
                 }),
                 connections: Array.from(connections.value.values()),
-                previewEnabled: Array.from(nodePreviewEnabled.value)
+                previewEnabled: Array.from(nodePreviewEnabled.value),
+                settings: {
+                    defaultPeerLayout: defaultPeerLayout.value
+                }
             }
 
             await storage.setItem('leitmotif-graph', graphData)
@@ -295,6 +302,7 @@ export const useGraphStore = defineStore('graph', () => {
      * Export graph as JSON string
      */
     function exportGraphJSON(): string {
+        console.log('[GraphStore] Exporting graph, defaultPeerLayout:', defaultPeerLayout.value)
         const graphData = {
             nodes: Array.from(nodeInstances.value.entries()).map(([, node]) => {
                 const params: Record<string, any> = {}
@@ -334,6 +342,9 @@ export const useGraphStore = defineStore('graph', () => {
             }),
             connections: Array.from(connections.value.values()),
             previewEnabled: Array.from(nodePreviewEnabled.value),
+            settings: {
+                defaultPeerLayout: defaultPeerLayout.value
+            },
             metadata: {
                 version: '1.0',
                 exportDate: new Date().toISOString(),
@@ -342,6 +353,7 @@ export const useGraphStore = defineStore('graph', () => {
             }
         }
 
+        console.log('[GraphStore] Export data settings:', graphData.settings)
         return JSON.stringify(graphData, null, 2)
     }
 
@@ -497,6 +509,15 @@ export const useGraphStore = defineStore('graph', () => {
                 nodePreviewEnabled.value = new Set(graphData.previewEnabled)
             }
 
+            // Load graph settings
+            if (graphData.settings) {
+                console.log('[GraphStore] Loading settings:', graphData.settings)
+                if (graphData.settings.defaultPeerLayout) {
+                    defaultPeerLayout.value = graphData.settings.defaultPeerLayout
+                    console.log('[GraphStore] Set defaultPeerLayout to:', defaultPeerLayout.value)
+                }
+            }
+
             // Save the loaded demo/data to storage so it persists on reload
             await saveToStorage()
 
@@ -552,6 +573,7 @@ export const useGraphStore = defineStore('graph', () => {
         selectedNodeId,
         selectedNode,
         nodePreviewEnabled,
+        defaultPeerLayout,
 
         // Actions
         addNode,

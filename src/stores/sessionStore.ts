@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import Peer, { type DataConnection } from 'peerjs'
 import { usePeerStore } from './peerStore'
+import { useGraphStore } from './graphStore'
 import type { PeerMetadata } from './types/peer'
 import { DEFAULT_CAPABILITIES } from './types/peer'
 import { PEER_OPTIONS } from '../utils/peerConfig'
@@ -202,6 +203,7 @@ export const useSessionStore = defineStore('session', () => {
   function handleClientConnection(conn: DataConnection) {
     // Lazily get peerStore here to avoid circular dependency at module load time
     const peerStore = usePeerStore()
+    const graphStore = useGraphStore()
 
     const clientPeerId = conn.peer
 
@@ -215,9 +217,14 @@ export const useSessionStore = defineStore('session', () => {
         isMock: false,
         capabilities: Object.values(DEFAULT_CAPABILITIES).map(c => ({ ...c, enabled: true })),
         connection: conn,
+        currentLayout: graphStore.defaultPeerLayout, // Apply default layout from graph settings
       }
       peerStore.addPeer(meta)
       peerStore.setPeerConnected(clientPeerId, true)
+      
+      // Apply the default layout to the peer
+      peerStore.setPeerLayout(clientPeerId, graphStore.defaultPeerLayout)
+      
       console.log('[Host] Peer registered:', clientPeerId)
     })
 

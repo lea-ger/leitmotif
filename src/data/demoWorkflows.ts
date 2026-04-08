@@ -157,7 +157,10 @@ export const DEMO_WORKFLOWS = [
             "clearBackground": true,
             "backgroundColor": "#000000"
           },
-          "exposedParameters": []
+          "exposedParameters": [
+            "width",
+            "height"
+          ]
         },
         {
           "id": "1774373708548-33awhv1w9",
@@ -328,7 +331,13 @@ export const DEMO_WORKFLOWS = [
             "scale": 1,
             "maintainAspect": false
           },
-          "exposedParameters": []
+          "exposedParameters": [
+            "x",
+            "y",
+            "width",
+            "height",
+            "scale"
+          ]
         },
         {
           "id": "1774722042759-afyucp685",
@@ -749,9 +758,12 @@ export const DEMO_WORKFLOWS = [
       "previewEnabled": [
         "1774373101910-2mu0dcsk2"
       ],
+      "settings": {
+        "defaultPeerLayout": "canvas"
+      },
       "metadata": {
         "version": "1.0",
-        "exportDate": "2026-04-08T13:52:54.178Z",
+        "exportDate": "2026-04-08T14:37:09.956Z",
         "nodeCount": 29,
         "connectionCount": 27
       }
