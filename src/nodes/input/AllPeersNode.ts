@@ -30,13 +30,13 @@ export class AllPeersNode extends BaseNode {
 
   initialize(): void {
     // Create output ports for common aggregate types
-    this.addOutput('allGyro', DataType.OBJECT)
-    this.addOutput('allAccelerometer', DataType.OBJECT)
-    this.addOutput('allTouch', DataType.OBJECT)
-    this.addOutput('allAudio', DataType.OBJECT)
-    this.addOutput('allVideo', DataType.OBJECT)
-    this.addOutput('allCanvas', DataType.OBJECT)
-    this.addOutput('allCustom', DataType.OBJECT)
+    this.addOutput('allGyro', DataType.OBJECT, 'Array of {peerId, peerName, timestamp, data} with gyro data')
+    this.addOutput('allAccelerometer', DataType.OBJECT, 'Array of {peerId, peerName, timestamp, data} with accelerometer data')
+    this.addOutput('allTouch', DataType.OBJECT, 'Array of {peerId, peerName, timestamp, data} with touch data')
+    this.addOutput('allAudio', DataType.OBJECT, 'Array of {peerId, peerName, timestamp, data} with audio streams')
+    this.addOutput('allVideo', DataType.OBJECT, 'Array of {peerId, peerName, timestamp, data} with video streams')
+    this.addOutput('allCanvas', DataType.OBJECT, 'Array of {peerId, peerName, timestamp, data} with canvas data')
+    this.addOutput('allCustom', DataType.OBJECT, 'Array of {peerId, peerName, timestamp, data} with custom data')
   }
 
   /**
