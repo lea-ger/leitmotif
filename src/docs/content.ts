@@ -1,5 +1,5 @@
-import { DOC_CATEGORIES, type DocEntry } from './types'
-import {DATA_TYPE_COLORS, DataType} from "../nodes";
+import {DOC_CATEGORIES, type DocEntry} from './types'
+import {DataType} from "../nodes";
 import {getDataTypeColor} from "../utils/utils.ts";
 
 /**
@@ -15,7 +15,7 @@ export const GETTING_STARTED_DOCS: DocEntry[] = [
       <h2>Welcome to Leitmotif!</h2>
       <p>Leitmotif is a node-based visual programming environment for creating participative audiovisual experiences. It's a bit like <a href="https://derivative.ca/">Touchdesigner</a> or <a href="https://cables.gl/">cables</a>, and it runs in your browser!</p>
       
-      <h3>Key Features</h3>
+      <!--<h3>Key Features</h3>
       <ul>
         <li>Node-based visual programming</li>
         <li>Real-time peer-to-peer collaboration</li>
@@ -23,14 +23,16 @@ export const GETTING_STARTED_DOCS: DocEntry[] = [
         <li>Audio synthesis with Tone.js</li>
         <li>CEL (Common Expression Language) for logic</li>
         <li>Persistent variable storage</li>
-      </ul>
+      </ul>-->
 
       <h3>The Basics</h3>
       <p>Here are some basic concepts and terms you need to know to get started with Leitmotif:</p>
         
        <h4>Nodes</h4>
        <img src="/node.png" alt="Node Example" style="max-width: 100%; border: 1px solid #ccc; margin: 10px 0;">
-       This is a node. It is the fundamental building block of your graph. Every node has a specific thing it does, like creating audio signals, drawing things on a canvas, or some kind of processing or data manipulation. In this case, you're seeing an "image" node, that is able to draw an image onto a canvas.
+       This is a node. It is the fundamental building block of your graph. Every node has a specific thing it does, like creating audio signals, drawing things on a canvas, or some kind of processing or data manipulation. 
+       In this case, you're seeing an "image" node, that is able to draw an image onto a canvas.
+       You can check what each node does in the <a href="/learn/node-reference" target="_blank">node reference</a>.
        <h4>Ports</h4>
        The little dots on both sides of the node are called "ports". These are data inputs and make it possible to connect nodes with each other.<br>
        These ports are colored, and the color of the port is an indicator of what type of data it expects as an input:
@@ -40,8 +42,55 @@ export const GETTING_STARTED_DOCS: DocEntry[] = [
           <li><div class="badge badge-xs mr-1" style="background: ${getDataTypeColor(DataType.NUMERIC)}"></div><strong>Yellow</strong>: Numeric data (numbers)</li>
           <li><div class="badge badge-xs mr-1" style="background: ${getDataTypeColor(DataType.OBJECT)}"></div><strong>Purple</strong>: Structured data (objects or lists)</li>
           <li><div class="badge badge-xs mr-1" style="background: ${getDataTypeColor(DataType.EVENT)}"></div><strong>Red</strong>: Events and event data</li>
-          <li><div class="badge badge-xs mr-1" style="background: ${getDataTypeColor(DataType.ANY)}"></div><strong>Gray</strong>: Any data (can be numbers, strings, objects, etc.)</li>
+          <li><div class="badge badge-xs mr-1" style="background: ${getDataTypeColor(DataType.ANY)}"></div><strong>Gray</strong>: Any data (can be numbers, text, objects, etc.)</li>
         </ul>
+        You can only connect ports with the same color. So, for example, the "canvas" output port of the image node above would only be able to connect to a canvas input port (or a "gray" input port).
+        <br>
+        <h4>And with that, you're basically good to go!</h4>
+        You could now start with building a simple workflow by clicking on the output port of one node, and drag a connector to the input port of another. The result could look like this:
+       <img src="/basic-workflow.png" alt="Workflow Example" style="max-width: 100%; border: 1px solid #ccc; margin: 10px 0;">
+       What does this do? First, an empty "canvas" is created. In the next node, we draw an image of a cat on this canvas. And, last but not least, we output this canvas to the "canvas output".<br>
+       And where is this canvas output? We will explore that in the next chapter, where we will take a closer look at the interface: <a href="/learn/interface" target="_blank">The Interface</a>.
+    `
+  },
+  {
+    id: 'interface',
+    title: 'The Interface',
+    category: DOC_CATEGORIES.GETTING_STARTED,
+    tags: ['basics', 'interface'],
+    content: `
+      <img src="/interface.png" alt="Interface Example" style="max-width: 100%; border: 1px solid #ccc; margin: 10px 0;">
+      <p>This is Leitmotif's editor. Let's go over the individual blocks here:
+      <ol>
+            <li><strong class="mr-2">Toolbar Menu:</strong>General settings and examples can be found here, as well as the reference (which you are currently looking at 👀).</li>
+            <li><strong class="mr-2">Play/Pause Button:</strong>Stops/starts the execution of the graph in the node editor.</li>
+            <li><strong class="mr-2">"Create Room" Button:</strong>Clicking this will create a room for peers to join your session.</li>
+            <li><strong class="mr-2">Peer panel:</strong>Here, you can see the peers that have joined your session. See more in the following section about the <a href="#peer-panel">Peer Panel</a>.</li>            
+            <li><strong class="mr-2">Node editor:</strong>Here, you can edit your graph by connecting the nodes with each other. You can open the <a href="#node-settings">node settings</a> by clicking on the nodes.</li>
+            <li><strong class="mr-2">Canvas output:</strong>This is a collapsible panel that shows the output of the canvas that you can draw on with some specific nodes.</li>            
+            <li><strong class="mr-2">"Add node" button:</strong>This button will open up the <a href="#node-library">node library</a>.</li>            
+      </ol>
+      </p>
+      <h2 id="peer-panel">Peer panel</h2>
+      <p>
+      The peer panel lists all the peers connected to you. It's updating live, and is running separately from the state of execution of your graph, which means that peers can always connect no matter if you hit "play" or "pause" in the toolbar.
+      For connected peers, you see the status of when the last time has been where they've been active. You can adjust some settings here too: You can change the layout that they see, as well as change which sensors of theirs you want to use.
+      For further details, you can see the chapter <a href="/learn/peers" target="_blank" rel="noopener noreferrer">"Working with peers"</a>.
+      You can also add a "Mock peer" here which lets you test your graph. 
+      When you want to place one of the peers into your graph, you can simply click on it and drag it into the editor.
+      </p>
+      <h2 id="node-settings">Node settings</h2>
+      <img src="/edit-panel.png" alt="Node Settings Example" style="max-width: 100%; border: 1px solid #ccc; margin: 10px 0;">
+      <p>Above is an example of an edit panel, in this case for the image node. As mentioned previously, this node draws an image onto a canvas, and this is where you can upload the image you want to see there!
+        There are some other parameters you can set here, like an "X" and a "Y" coordinate for where this image should be placed, or the scaling behavior, i.e. if the image should fill out the canvas, or fit onto it to be fully visible.
+        The "X" and "Y" parameters have the "input" checkbox activated. Looking at the node, a new input port for this value is active, named "param_x". That means you can connect an output port of another node to it and set its value dynamically!
+      </p>
+      <h2 id="node-library">Node library</h2>
+      <p>
+            In the node library, you can see all the nodes available to be freely placed in the editor (except for the nodes for singular peers - you need to look at the <a href="#peer-panel">Peer Panel</a> for those!).
+            They are grouped by function, and have a short description of what exactly it is they do.
+            When you want to place one of these nodes into your graph, start dragging it out by holding down left click. That way, the library modal should disappear and you can place the node inside the editor.
+      </p>
     `
   },
 ]
@@ -121,6 +170,20 @@ export const CONCEPT_DOCS: DocEntry[] = [
     title: 'The Engine',
     category: DOC_CATEGORIES.CONCEPTS,
     tags: ['concepts', 'engine'],
+    content: `
+      <p>The engine is the core runtime that executes your node graph. It manages data flow, variable storage and node processing.</p>
+      
+      <h3>The execution loop</h3>
+      <p>The execution of your project starts when you hit "play".</p>
+      
+      <h3>Variables</h3>
+    `
+  },
+  {
+    id: 'peers',
+    title: 'Working with Peers',
+    category: DOC_CATEGORIES.CONCEPTS,
+    tags: ['concepts', 'peers'],
     content: `
       <h2>The Engine</h2>
       <p>The engine is the core runtime that executes your node graph. It manages data flow, variable storage and node processing.</p>

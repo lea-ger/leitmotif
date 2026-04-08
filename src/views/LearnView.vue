@@ -3,9 +3,13 @@
     <!-- Header -->
     <div class="navbar bg-base-300 border-b border-base-content/10">
       <div class="flex-1">
+        <!-- Mobile menu toggle -->
+        <label for="sidebar-drawer" class="btn btn-ghost drawer-button lg:hidden">
+          <Icon icon="ph:list" class="text-xl" />
+        </label>
         <a href="/editor" class="btn btn-ghost text-xl">
           <Icon icon="ph:arrow-left" />
-          Back to Editor
+          <span class="hidden sm:inline">Back to Editor</span>
         </a>
       </div>
       <div class="flex-none">
@@ -13,30 +17,14 @@
       </div>
     </div>
 
-    <div class="flex">
-      <!-- Sidebar -->
-      <aside class="w-64 bg-base-200 border-r border-base-content/10 min-h-[calc(100vh-4rem)] p-4">
-        <div class="space-y-4">
-          <div v-for="(entries, category) in docsByCategory" :key="category">
-            <h3 class="text-xs font-semibold uppercase opacity-60 mb-2">{{ category }}</h3>
-            <ul class="menu menu-sm space-y-1">
-              <li v-for="entry in entries" :key="entry.id">
-                <router-link 
-                  :to="'/learn/' + entry.id"
-                  :class="{ 'active': currentDocId === entry.id }"
-                >
-                  {{ entry.title }}
-                </router-link>
-              </li>
-            </ul>
-          </div>
-        </div>
-      </aside>
-
-      <!-- Content -->
-      <main class="flex-1 p-8 max-w-4xl">
-        <div v-if="currentDoc">
-          <h1 class="text-4xl font-bold mb-8">{{ currentDoc.title }}</h1>
+    <div class="drawer lg:drawer-open">
+      <input id="sidebar-drawer" type="checkbox" class="drawer-toggle" />
+      
+      <div class="drawer-content flex">
+        <!-- Content -->
+        <main class="flex-1 p-4 sm:p-8 max-w-7xl mx-auto w-full">
+          <div v-if="currentDoc">
+            <h1 class="text-3xl sm:text-4xl font-bold mb-6 sm:mb-8">{{ currentDoc.title }}</h1>
 
           <!-- Node Reference (special handling) -->
           <div v-if="currentDoc.id === 'node-reference'">
@@ -46,34 +34,45 @@
             </p>
 
             <div v-for="category in nodeCategories" :key="category" class="mb-12">
-              <h3 class="text-2xl font-semibold mb-4 capitalize">{{ category }} Nodes</h3>
+              <h3 class="text-2xl font-semibold mb-6 capitalize">{{ category }} Nodes</h3>
               
-              <div class="space-y-6">
+              <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <div 
                   v-for="node in getNodesByCategory(category)" 
                   :key="node.type"
                   :id="'node-' + node.type"
                   class="card bg-base-200 shadow-sm"
                 >
-                  <div class="card-body">
-                    <div class="flex items-start gap-4">
+                  <div class="card-body p-4 sm:p-6">
+                    <div class="flex items-start gap-3 sm:gap-4">
                       <div
-                        class="w-12 h-12 rounded flex items-center justify-center shrink-0"
-                        :style="{ backgroundColor: node.color + '20', color: node.color }"
+                        class="w-10 h-10 sm:w-12 sm:h-12 rounded flex items-center justify-center shrink-0"
+                        :style="{ 
+                          backgroundColor: node.color + '20', 
+                          color: node.color,
+                          textShadow: '0 0 8px rgba(0,0,0,0.5)'
+                        }"
                       >
-                        <Icon :icon="node.icon" class="text-2xl" />
+                        <Icon :icon="node.icon" class="text-xl sm:text-2xl" />
                       </div>
-                      <div class="flex-1">
-                        <h4 class="card-title text-xl">
+                      <div class="flex-1 min-w-0">
+                        <h4 class="card-title text-lg sm:text-xl flex-wrap gap-2">
                           {{ node.displayName }}
-                          <span class="badge badge-sm" :style="{ backgroundColor: node.color + '20', color: node.color }">
+                          <span 
+                            class="badge badge-sm font-normal" 
+                            :style="{ 
+                              backgroundColor: node.color + '20', 
+                              color: node.color,
+                              textShadow: '0 0 4px rgba(0,0,0,0.4)'
+                            }"
+                          >
                             {{ node.type }}
                           </span>
                         </h4>
                         <p class="text-sm text-base-content/70 mt-2">{{ node.description }}</p>
 
                         <!-- Ports -->
-                        <div class="mt-4 grid grid-cols-2 gap-4">
+                        <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
                           <div v-if="node.inputs.length > 0">
                             <h5 class="text-xs font-semibold uppercase opacity-60 mb-2">Inputs</h5>
                             <ul class="space-y-1">
@@ -166,6 +165,29 @@
         </div>
       </main>
     </div>
+    
+    <!-- Drawer Sidebar -->
+    <div class="drawer-side">
+      <label for="sidebar-drawer" class="drawer-overlay"></label>
+      <aside class="w-64 bg-base-200 min-h-full p-4">
+        <div class="space-y-4">
+          <div v-for="(entries, category) in docsByCategory" :key="category">
+            <h3 class="text-xs font-semibold uppercase opacity-60 mb-2">{{ category }}</h3>
+            <ul class="menu menu-sm space-y-1">
+              <li v-for="entry in entries" :key="entry.id">
+                <router-link 
+                  :to="'/learn/' + entry.id"
+                  :class="{ 'active': currentDocId === entry.id }"
+                >
+                  {{ entry.title }}
+                </router-link>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </div>
   </div>
 </template>
 
@@ -174,9 +196,13 @@ import {computed} from 'vue'
 import {useRoute} from 'vue-router'
 import {Icon} from '@iconify/vue'
 import {NodeRegistry} from '../nodes/NodeRegistry'
+import {registerAllNodes} from '../nodes'
 import {type DataType, type NodeMetadata, type NodeParameter} from '../nodes/types'
 import {DOC_CATEGORIES, DOCS, getDocById, getDocsByCategory} from '../docs'
 import {getDataTypeColor} from "../utils/utils.ts";
+
+// Register all node types so they're available for the reference
+registerAllNodes()
 
 interface Props {
   docId?: string
@@ -211,20 +237,24 @@ interface NodeDocInfo extends NodeMetadata {
 
 function getNodesByCategory(category: string): NodeDocInfo[] {
   const allNodes = NodeRegistry.getAllMetadata()
+  
   return allNodes
     .filter(node => node.category === category)
     .map(metadata => {
       // Create instance to get detailed info
       const instance = NodeRegistry.create(metadata.type)
-      if (!instance) return null
+      if (!instance) {
+        console.warn('[LearnView] Failed to create instance for', metadata.type)
+        return null
+      }
 
-      const inputs = instance.getInputs().map(port => ({
+      const inputs = instance.getInputPorts().map(port => ({
         name: port.name,
         dataType: port.dataType,
         description: port.description
       }))
 
-      const outputs = instance.getOutputs().map(port => ({
+      const outputs = instance.getOutputPorts().map(port => ({
         name: port.name,
         dataType: port.dataType,
         description: port.description
