@@ -78,7 +78,7 @@
                             <ul class="space-y-1">
                               <li v-for="input in node.inputs" :key="input.name" class="text-sm">
                                 <span class="font-mono text-xs opacity-70">{{ input.name }}</span>
-                                <span class="badge badge-xs ml-2" :style="{ backgroundColor: getDataTypeColor(input.dataType) }">
+                                <span class="badge badge-xs text-white text-shadow-xs ml-2" :style="{ backgroundColor: getDataTypeColor(input.dataType) }">
                                   {{ input.dataType }}
                                 </span>
                                 <div v-if="input.description" class="text-xs opacity-60 ml-4">{{ input.description }}</div>
@@ -90,7 +90,7 @@
                             <ul class="space-y-1">
                               <li v-for="output in node.outputs" :key="output.name" class="text-sm">
                                 <span class="font-mono text-xs opacity-70">{{ output.name }}</span>
-                                <span class="badge badge-xs ml-2" :style="{ backgroundColor: getDataTypeColor(output.dataType) }">
+                                <span class="badge badge-xs text-white text-shadow-xs ml-2" :style="{ backgroundColor: getDataTypeColor(output.dataType) }">
                                   {{ output.dataType }}
                                 </span>
                                 <div v-if="output.description" class="text-xs opacity-60 ml-4">{{ output.description }}</div>
@@ -105,7 +105,7 @@
                           <ul class="space-y-1">
                             <li v-for="param in node.parameters" :key="param.id" class="text-sm">
                               <span class="font-semibold">{{ param.name }}</span>
-                              <span class="badge badge-xs badge-ghost ml-2">{{ param.type }}</span>
+                              <span class="badge badge-xs badge-ghost text-shadow-xs ml-2">{{ param.type }}</span>
                               <div v-if="param.description" class="text-xs opacity-60 ml-4 mt-1" v-html="formatDescription(param.description)"></div>
                               <div v-else class="text-xs opacity-60 ml-4 mt-1">
                                 Default: <code class="text-xs">{{ param.defaultValue }}</code>
