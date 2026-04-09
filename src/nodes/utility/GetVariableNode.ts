@@ -47,15 +47,6 @@ export class GetVariableNode extends BaseNode {
       defaultValue: '',
       description: 'CEL expression to initialize variable if it doesn\'t exist (creates variable on first access). Learn more: https://github.com/google/cel-spec'
     })
-    
-    this.addParameter({
-      id: 'typeHint',
-      name: 'Type Cast',
-      type: 'string',
-      defaultValue: 'none',
-      options: ['none', 'int', 'double', 'string', 'bool'],
-      description: 'Automatically cast the output value to this CEL type for strict type compatibility'
-    })
   }
 
   process(): void {
@@ -78,12 +69,6 @@ export class GetVariableNode extends BaseNode {
       // Convert BigInt to regular number for CEL compatibility
       if (typeof value === 'bigint') {
         value = Number(value)
-      }
-      
-      // Apply type cast if specified
-      const typeHint: string = this.getParameter('typeHint') || 'none'
-      if (typeHint !== 'none') {
-        value = this.applyCast(value, typeHint)
       }
       
       this.setOutputValue('value', value)
@@ -137,20 +122,5 @@ export class GetVariableNode extends BaseNode {
     this.variableStore = null
     this.cachedEvaluator = null
     this.cachedDefault = ''
-  }
-  
-  private applyCast(value: any, typeHint: string): any {
-    switch (typeHint) {
-      case 'int':
-        return Math.floor(Number(value))
-      case 'double':
-        return Number(value)
-      case 'string':
-        return String(value)
-      case 'bool':
-        return Boolean(value)
-      default:
-        return value
-    }
   }
 }
