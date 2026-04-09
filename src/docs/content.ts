@@ -349,8 +349,32 @@ width / height     // Calculate aspect ratio</code></pre>
         
         <h2>Working with a singular peer</h2>
         
-        <p>You can test your logic either by using another device, by connecting via a private tab or a different browser, or by using a <em>Mock Peer</em>.<br>
-         Mock peers generate some artificial sensor readings for you.</p>
+        <p>First of, for peers to be able to connect, you will need to create a session by clicking the button in the top right. A code will appear, with two buttons. If you click on the QR-Code button, a window will appear to display the QR-Code for peers to join the session:</p>
+        <img src="/qr-modal.png" alt="QR-Code" class="w-md" style="max-width: 100%; border: 1px solid #ccc; margin: 10px 0;" />
+        <p>
+         You can connect to this session now by using another device, by connecting via a private tab or a different browser, or by using a <em>Mock Peer</em>.<br>
+         Mock peers generate some artificial sensor readings for you.
+        </p>
+        
+        <p>Once a peer has connected, they will appear in the peer panel. You have a few options here: You can switch on/off capabilities, which basically means: you can set what kind of data you want to use of this peer. You are also able to change the layout the peer sees. You can check the later section about <a href="#peer-layouts">peer layouts</a> if you're curious about this topic!</p>
+        
+        <p>So, what's next with the peer? That's up for you to decide! But first, drag it into your editor.</p>
+        
+        <p>Sticking to the example from the <a href="/learn/introduction">Introduction</a>, we could let the peer make our image move! Simply connect the peer's accelerometer data to the x/y position of the image, and it will start to move on the canvas.</p>
+        
+        <img src="/peer-example.png" alt="Peer Example" style="max-width: 100%; border: 1px solid #ccc; margin: 10px 0;">
+        
+        <h2 id="peer-layouts">Peer Layouts</h2>
+        
+        <p>As the host, you're not only able to control what you see on your canvas. You can also change what the peers are seeing!</p>
+        
+        <p>You have access to four pre-defined layouts, which, on the peer's end, look like this:</p>
+        
+        ...
+        
+        <p>Some of these can be interacted with, and switching to this layout on the hosts end enables some new ports to be activated. For example, if you choose the <em>Keyboard</em> layout, you get an output port for the keyboard's frequency.</p>
+        
+        <p>That way, you could directly hook up the peer to the <em>Tone Synth</em> node. That way, when the peer plays something on the keyboard, you can actually hear what they're playing! It's like a remote MIDI-Keyboard! </p>
         
         <h2>Working with multiple peers using the "allPeers" node</h2>
         
@@ -360,10 +384,9 @@ width / height     // Calculate aspect ratio</code></pre>
         <p>That's where the <strong>"All peers node"</strong> comes in handy: it puts out a list of all the data that all connected peers are sending over!</p>
         <p>However, working with this data can be tricky. Some familiarity with programming can assist you here.</p>
         <p>The node outputs a list of objects. The objects have a structure like this: <code>{peerId, peerName, timestamp, data}</code>.</p>
-        <p>Let's say you want to work with the peer's accelerometer data. You would need the <em>allAccelerometer</em> output. But, it is still wrapped in a list. You could use an <strong>Each</strong> node to loop through this data, or you could use a CEL expression, like so: <br>
-          <code>
-            allAccelerometer.map(peer => peer.data)
-          </code><br>
+        <p>Let's say you want to work with the peer's accelerometer data. You would need the <em>allAccelerometer</em> output. But, it is still wrapped in a list. You could use an <strong>Each</strong> node to loop through this data, or you could use a CEL expression, like so: </p>
+          <pre><code>allAccelerometer.map(peer => peer.data)</code></pre>
+          <p>
           This would create a new list, containing just the sensor data, without the peerId and all the other stuff that's in the objects.
           Note that the <code>peer.data</code> means that for each peer object we get the <em>"data"</em> attribute, which holds the actual sensor data we're interested in.
         </p>
@@ -407,6 +430,17 @@ type(true) == bool</code></pre>
         <li><strong>If Node</strong>: Conditional routing based on expressions</li>
         <li><strong>Get Variable</strong>: Default values when variable doesn't exist</li>
       </ul>
+      
+      <h3>Quirks in Leitmotif</h3>
+      <p>Sometimes, when you want to use numbers in Leitmotif, something might not function the way it should when using expressions.</p>
+      <p>When looking at a console, the ExpressionNode throws an error, which states that a specific type operation is not possible, e.g. dividing a <code>double</code> with an <code>int</code>.</p>
+      <p>In this example, there's a <em>GetVariable</em> node with a default value of 1900 forwarded to the expression's "a" port. It is evaluated with this expression: <code>a / 1000</code>. This is the resulting error:</p>
+      <img src="/cel-type-error.png" alt="Error" class="my-4" style="max-width: 100%; border: 1px solid #ccc;">
+      <p>This is because CEL is very strict with its types. If you have a number with a decimal point, it's considered a <code>double</code>, and if you have a whole number, it's an <code>int</code>. You can't mix these types in operations without explicitly converting them.</p>
+      <p>To fix this, you can use doubles on both sides of the expression. For example:</p>
+      <pre><code>a / 1000.0</code></pre>
+      <p>If it's the other way around and you want the result to be an <code>int</code>, you can use a conversion function like this:</p>
+      <pre><code>int(a) / 1000</code></pre>
 
       <h3>Learn More</h3>
       <p>Full CEL specification: <a href="https://github.com/google/cel-spec" target="_blank">https://github.com/google/cel-spec</a></p>
