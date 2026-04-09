@@ -1,47 +1,88 @@
-# Leitmotif — RTC Demo (Vue 3 + Vite)
+# Leitmotif
 
-A minimal Real‑Time Collaboration demo: one Host shares a QR code; multiple Clients (phones) join and stream accelerometer/orientation data via WebRTC (PeerJS). The Host maps motion to audio using Tone.js.
+![Leitmotif editor](public/peer-example.png)
 
-## Features
-- Host page generates a room ID and QR join link
-- Client page captures `devicemotion`/`deviceorientation` (with iOS permission flow)
-- PeerJS data channels for low‑latency sensor streaming
-- Tone.js synth on Host maps motion to pitch/volume/detune
-- Vue Router with `Home`, `Host`, and `Client` views
 
-## Getting started
-1. Install dependencies
-   ```
-   npm install
-   ```
-2. Run the dev server
-   ```
-   npm run dev
-   ```
-3. Open the Host in a desktop browser
-   - Navigate to `http://localhost:5173/host` (or the URL shown in the terminal)
-   - Click "Start Audio" once to unlock audio on the Host
-   - A QR code appears with the client join URL
-4. Join from smartphones as Clients
-   - Scan the QR code or open the shared link (e.g., `http://YOUR_HOST/client/ROOM_ID`)
-   - Tap "Start" to grant motion permissions (required on iOS)
-   - Move the phone and hear the Host synth react
+Leitmotif is a node-based creative tool for collaborative/participative audiovisual art.
+It's kind of like [Touchdesigner](https://derivative.ca/) or [cables](https://cables.gl/), but web-based and designed for real-time collaboration and performance. 
+It allows artists, designers, educators, and developers to create interactive audiovisual experiences that let you use your audience as a creative material.
 
-## Notes
-- Localhost is considered a secure context, which is required for motion sensors on iOS. For remote testing, use HTTPS.
-- The default PeerJS cloud signaling server (`0.peerjs.com`) is used. For production, run your own signaling server.
-- Sensor rate is throttled to ~20 Hz to reduce bandwidth.
+Check it out live: [https://lea-ger.github.io/leitmotif/](https://lea-ger.github.io/leitmotif/).
 
-## Tech stack
-- Vue 3, Vite, TypeScript
-- Vue Router
-- PeerJS for WebRTC data channels
-- Tone.js for Web Audio synthesis
-- `qrcode.vue` for QR rendering
+The project is built with Vue.js and Bun, leveraging WebRTC for peer-to-peer communication.
 
-## File overview
-- `src/router.ts` — routes: `/`, `/host`, `/client/:roomId?`
-- `src/views/HomeView.vue` — landing, navigation, enter Host ID
-- `src/views/HostView.vue` — creates room, shows QR, audio mapping
-- `src/views/ClientView.vue` — connects to Host, streams sensors
-- `src/App.vue` — shell with nav + `RouterView`
+## Project Context
+
+This project was created as a project for my master thesis at the [Technische Hochschule Köln](https://www.th-koeln.de/). 
+With the premise of a tool for creating interactive real-time audiovisual experiences, the goal was to explore how to design and implement such a tool in a way that is accessible to a wide range of users.
+This was inspired by my own experience using tools like Touchdesigner or Hydra, which even I as a techie found to have a steep learning curve.
+
+## Installation
+
+### Requirements
+
+- Bun: `>=1.0.0` (recommended)
+- Node.js: `>=18.0.0`
+- Modern browser with WebRTC support
+
+### Setup with Bun
+
+```bash
+git clone git@github.com:lea-ger/leitmotif.git
+cd leitmotif
+bun install
+```
+
+### Run locally
+
+```bash
+bun run dev
+```
+
+### Build for production
+
+```bash
+bun run build
+```
+
+### Preview the production build
+
+```bash
+bun run preview
+```
+
+## Usage
+
+For learning how to use Leitmotif, the best way is to check out the [in-app documentation](https://lea-ger.github.io/leitmotif/learn/)!
+
+## Repository Structure
+
+Here's a guide where to find what:
+- `src/main.ts` and `src/App.vue`: App entry and shell
+- `src/views/`: Main screens such as editor, client, and learning views
+- `src/components/`: Reusable UI components such as node cards, panels, and modals
+- `src/components/client/`: Peer-side mobile layouts (canvas, keyboard, touchpad, empty)
+- `src/nodes/`: Node system definitions and implementations
+- `src/engine/`: Graph execution logic
+- `src/stores/`: Pinia stores for graph, peers, variables, session, and canvas state
+- `src/data/demoWorkflows.ts`: Demo workflow presets
+- `src/docs/`: In-app documentation content and types
+- `src/utils/`: Shared helper utilities
+- `public/`: Static assets served as-is
+- `docs/`: Extra project documentation
+
+[In the `docs/` folder](/docs), you can find the Architecture Decision Records (ADRs) that document the key architectural choices made during development.
+
+## License
+
+This project is licensed under the MIT License. See [LICENSE](LICENSE.md) for details.
+
+## Contact me
+
+- Email: [leander.gerwing@gmail.com](mailto:leander.gerwing@gmail.com)
+- Email (university): [leander_robert_bernhard.gerwing@smail.th-koeln.de](mailto:leander_robert_bernhard.gerwing@smail.th-koeln.de)
+- My website: [https://le-ger.com](https://le-ger.com)
+
+## Contributing (Optional)
+
+If you like to contribute, just to a PR and we'll figure out the rest :)
