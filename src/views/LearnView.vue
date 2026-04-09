@@ -7,13 +7,13 @@
         <label for="sidebar-drawer" class="btn btn-ghost drawer-button lg:hidden">
           <Icon icon="ph:list" class="text-xl" />
         </label>
-        <a href="/editor" class="btn btn-ghost text-xl">
+        <a :href="withBase('/editor')" class="btn btn-ghost text-xl">
           <Icon icon="ph:arrow-left" />
           <span class="hidden sm:inline">Back to Editor</span>
         </a>
       </div>
       <div class="flex-none">
-        <a href="/" class="btn btn-ghost">Home</a>
+        <a :href="withBase('/')" class="btn btn-ghost">Home</a>
       </div>
     </div>
 
@@ -34,7 +34,7 @@
             </p>
 
             <div v-for="category in nodeCategories" :key="category" class="mb-12">
-              <h3 class="text-2xl font-semibold mb-6 capitalize">{{ category }} Nodes</h3>
+              <h3 class="text-2xl font-semibold mb-6">{{ getCategoryLabel(category) }} Nodes</h3>
               
               <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <div 
@@ -197,7 +197,7 @@ import {useRoute} from 'vue-router'
 import {Icon} from '@iconify/vue'
 import {NodeRegistry} from '../nodes/NodeRegistry'
 import {registerAllNodes} from '../nodes'
-import {type DataType, type NodeMetadata, type NodeParameter} from '../nodes/types'
+import {getNodeColor, getNodeVisualCategory, type DataType, type NodeMetadata, type NodeParameter} from '../nodes/types'
 import {DOC_CATEGORIES, DOCS, getDocById, getDocsByCategory} from '../docs'
 import {getDataTypeColor} from "../utils/utils.ts";
 
@@ -227,7 +227,14 @@ const currentDocIndex = computed(() => allDocs.value.findIndex(doc => doc.id ===
 const previousDoc = computed(() => currentDocIndex.value > 0 ? allDocs.value[currentDocIndex.value - 1] : null)
 const nextDoc = computed(() => currentDocIndex.value < allDocs.value.length - 1 ? allDocs.value[currentDocIndex.value + 1] : null)
 
-const nodeCategories = ['input', 'processor', 'output', 'utility']
+const nodeCategories = ['video', 'audio', 'processing', 'control-flow', 'output', 'utility']
+
+function withBase(path: string): string {
+  const base = import.meta.env.BASE_URL || '/'
+  const normalizedBase = base.endsWith('/') ? base.slice(0, -1) : base
+  const normalizedPath = path.startsWith('/') ? path : `/${path}`
+  return `${normalizedBase}${normalizedPath}`
+}
 
 interface NodeDocInfo extends NodeMetadata {
   inputs: Array<{ name: string; dataType: DataType; description?: string }>
@@ -239,7 +246,7 @@ function getNodesByCategory(category: string): NodeDocInfo[] {
   const allNodes = NodeRegistry.getAllMetadata()
   
   return allNodes
-    .filter(node => node.category === category)
+    .filter(node => getNodeVisualCategory(node) === category)
     .map(metadata => {
       // Create instance to get detailed info
       const instance = NodeRegistry.create(metadata.type)
@@ -266,6 +273,7 @@ function getNodesByCategory(category: string): NodeDocInfo[] {
 
       return {
         ...metadata,
+        color: getNodeColor(metadata),
         inputs,
         outputs,
         parameters
@@ -279,6 +287,11 @@ function formatDescription(description: string): string {
     /(https?:\/\/[^\s]+)/g,
     '<a href="$1" target="_blank" rel="noopener noreferrer" class="link">$1</a>'
   )
+}
+
+function getCategoryLabel(category: string): string {
+  if (category === 'control-flow') return 'Control Flow'
+  return category.charAt(0).toUpperCase() + category.slice(1)
 }
 
 function getNodeDetails(nodeType: string): string | null {
