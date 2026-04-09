@@ -2,6 +2,8 @@ import {DOC_CATEGORIES, type DocEntry} from './types'
 import {DataType} from "../nodes";
 import {getDataTypeColor} from "../utils/utils.ts";
 
+const BASE_URL = import.meta.env.BASE_URL
+
 /**
  * Getting Started documentation entries
  */
@@ -29,10 +31,10 @@ export const GETTING_STARTED_DOCS: DocEntry[] = [
       <p>Here are some basic concepts and terms you need to know to get started with Leitmotif:</p>
         
        <h4>Nodes</h4>
-       <img src="/node.png" alt="Node Example" style="max-width: 100%; border: 1px solid #ccc; margin: 10px 0;">
+       <img src="${BASE_URL}node.png" alt="Node Example" style="max-width: 100%; border: 1px solid #ccc; margin: 10px 0;">
        This is a node. It is the fundamental building block of your graph. Every node has a specific thing it does, like creating audio signals, drawing things on a canvas, or some kind of processing or data manipulation. 
        In this case, you're seeing an "image" node, that is able to draw an image onto a canvas.
-       You can check what each node does in the <a href="/learn/node-reference" target="_blank">node reference</a>.
+       You can check what each node does in the <a href="${BASE_URL}learn/node-reference" target="_blank">node reference</a>.
        <h4>Ports</h4>
        The little dots on both sides of the node are called "ports". These are data inputs and make it possible to connect nodes with each other.<br>
        These ports are colored, and the color of the port is an indicator of what type of data it expects as an input:
@@ -49,9 +51,9 @@ export const GETTING_STARTED_DOCS: DocEntry[] = [
         </p><p>
         <h4>And with that, you're basically good to go!</h4>
         You could now start with building a simple workflow by clicking on the output port of one node, and drag a connector to the input port of another. The result could look like this:
-       <img src="/basic-workflow.png" alt="Workflow Example" style="max-width: 100%; border: 1px solid #ccc; margin: 10px 0;">
+       <img src="${BASE_URL}basic-workflow.png" alt="Workflow Example" style="max-width: 100%; border: 1px solid #ccc; margin: 10px 0;">
        What does this do? First, an empty "canvas" is created. In the next node, we draw an image of a cat on this canvas. And, last but not least, we output this canvas to the "canvas output".</p><p>
-       And where is this canvas output? We will explore that in the next chapter, where we will take a closer look at the interface: <a href="/learn/interface" target="_blank">The Interface</a>.
+       And where is this canvas output? We will explore that in the next chapter, where we will take a closer look at the interface: <a href="${BASE_URL}learn/interface" target="_blank">The Interface</a>.
     `
   },
   {
@@ -60,7 +62,7 @@ export const GETTING_STARTED_DOCS: DocEntry[] = [
     category: DOC_CATEGORIES.GETTING_STARTED,
     tags: ['basics', 'interface'],
     content: `
-      <img src="/interface.png" alt="Interface Example" style="max-width: 100%; border: 1px solid #ccc; margin: 10px 0;">
+      <img src="${BASE_URL}interface.png" alt="Interface Example" style="max-width: 100%; border: 1px solid #ccc; margin: 10px 0;">
       <p>This is Leitmotif's editor. Let's go over the individual blocks here:
       <ol>
             <li><strong class="mr-2">Toolbar Menu:</strong>General settings and examples can be found here, as well as the reference (which you are currently looking at 👀).</li>
@@ -76,13 +78,13 @@ export const GETTING_STARTED_DOCS: DocEntry[] = [
       <p>
       The peer panel lists all the peers connected to you. It's updating live, and is running separately from the state of execution of your graph, which means that peers can always connect no matter if you hit "play" or "pause" in the toolbar.
       For connected peers, you see the status of when the last time has been where they've been active.</p><p> You can adjust some settings here too: You can change the layout that they see, as well as change which sensors of theirs you want to use.
-      For further details, you can see the chapter <a href="/learn/peers" target="_blank" rel="noopener noreferrer">"Working with peers"</a>.</p><p>
+      For further details, you can see the chapter <a href="${BASE_URL}learn/peers" target="_blank" rel="noopener noreferrer">"Working with peers"</a>.</p><p>
       You can also add a "Mock peer" here which lets you test your graph with some simulated values from a peer without actually connecting a device. This mock peer will generate some sensor data in a predetermined pattern. 
       For example, for the accelerometer, it will generate a sine wave pattern that oscillates between -10 and 10 on the x and y axes, and -5 to 5 in the z axis.</p><p>
       When you want to place one of the peers into your graph, you can simply click on it and drag it into the editor.
       </p>
       <h2 id="node-settings">Node settings</h2>
-      <img src="/edit-panel.png" alt="Node Settings Example" style="max-width: 100%; border: 1px solid #ccc; margin: 10px 0;">
+      <img src="${BASE_URL}edit-panel.png" alt="Node Settings Example" style="max-width: 100%; border: 1px solid #ccc; margin: 10px 0;">
       <p>Above is an example of an edit panel, in this case for the image node. As mentioned previously, this node draws an image onto a canvas, and this is where you can upload the image you want to see there!
         </p><p>There are some other parameters you can set here, like an "X" and a "Y" coordinate for where this image should be placed, or the scaling behavior, i.e. if the image should fill out the canvas, or fit onto it to be fully visible.
         </p><p>The "X" and "Y" parameters have the "input" checkbox activated. Looking at the node, a new input port for this value is active, named "param_x". That means you can connect an output port of another node to it and set its value dynamically!
@@ -350,7 +352,7 @@ width / height     // Calculate aspect ratio</code></pre>
         <h2>Working with a singular peer</h2>
         
         <p>First of, for peers to be able to connect, you will need to create a session by clicking the button in the top right. A code will appear, with two buttons. If you click on the QR-Code button, a window will appear to display the QR-Code for peers to join the session:</p>
-        <img src="/qr-modal.png" alt="QR-Code" class="w-md" style="max-width: 100%; border: 1px solid #ccc; margin: 10px 0;" />
+        <img src="${BASE_URL}qr-modal.png" alt="QR-Code" class="w-md" style="max-width: 100%; border: 1px solid #ccc; margin: 10px 0;" />
         <p>
          You can connect to this session now by using another device, by connecting via a private tab or a different browser, or by using a <em>Mock Peer</em>.<br>
          Mock peers generate some artificial sensor readings for you.
@@ -360,9 +362,9 @@ width / height     // Calculate aspect ratio</code></pre>
         
         <p>So, what's next with the peer? That's up for you to decide! But first, drag it into your editor.</p>
         
-        <p>Sticking to the example from the <a href="/learn/introduction">Introduction</a>, we could let the peer make our image move! Simply connect the peer's accelerometer data to the x/y position of the image, and it will start to move on the canvas.</p>
+        <p>Sticking to the example from the <a href="${BASE_URL}learn/introduction">Introduction</a>, we could let the peer make our image move! Simply connect the peer's accelerometer data to the x/y position of the image, and it will start to move on the canvas.</p>
         
-        <img src="/peer-example.png" alt="Peer Example" style="max-width: 100%; border: 1px solid #ccc; margin: 10px 0;">
+        <img src="${BASE_URL}peer-example.png" alt="Peer Example" style="max-width: 100%; border: 1px solid #ccc; margin: 10px 0;">
         
         <h2 id="peer-layouts">Peer Layouts</h2>
         
@@ -380,7 +382,7 @@ width / height     // Calculate aspect ratio</code></pre>
         
         <p>Sometimes, you might not want to drag in each peer individually into your graph and connect them over and over. Maybe you have some automated process that should happen using peer data.</p>
         
-        <img src="/all-peers-node.png" alt="All Peers Node Example" style="max-width: 100%; border: 1px solid #ccc; margin: 10px 0;">
+        <img src="${BASE_URL}all-peers-node.png" alt="All Peers Node Example" style="max-width: 100%; border: 1px solid #ccc; margin: 10px 0;">
         <p>That's where the <strong>"All peers node"</strong> comes in handy: it puts out a list of all the data that all connected peers are sending over!</p>
         <p>However, working with this data can be tricky. Some familiarity with programming can assist you here.</p>
         <p>The node outputs a list of objects. The objects have a structure like this: <code>{peerId, peerName, timestamp, data}</code>.</p>
@@ -435,7 +437,7 @@ type(true) == bool</code></pre>
       <p>Sometimes, when you want to use numbers in Leitmotif, something might not function the way it should when using expressions.</p>
       <p>When looking at a console, the ExpressionNode throws an error, which states that a specific type operation is not possible, e.g. dividing a <code>double</code> with an <code>int</code>.</p>
       <p>In this example, there's a <em>GetVariable</em> node with a default value of 1900 forwarded to the expression's "a" port. It is evaluated with this expression: <code>a / 1000</code>. This is the resulting error:</p>
-      <img src="/cel-type-error.png" alt="Error" class="my-4" style="max-width: 100%; border: 1px solid #ccc;">
+      <img src="${BASE_URL}cel-type-error.png" alt="Error" class="my-4" style="max-width: 100%; border: 1px solid #ccc;">
       <p>This is because CEL is very strict with its types. If you have a number with a decimal point, it's considered a <code>double</code>, and if you have a whole number, it's an <code>int</code>. You can't mix these types in operations without explicitly converting them.</p>
       <p>To fix this, you can use doubles on both sides of the expression. For example:</p>
       <pre><code>a / 1000.0</code></pre>
