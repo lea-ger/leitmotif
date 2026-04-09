@@ -34,7 +34,7 @@
                 :draggable="true"
                 @dragstart="onDragStart($event, node.metadata.type)"
                 class="node-item p-3 bg-base-100 rounded-b-lg rounded-t-sm cursor-move hover:bg-base-300 transition-colors h-full flex flex-col justify-between"
-                :style="{ borderTop: `4px solid ${node.metadata.color || '#666'}` }"
+                :style="{ borderTop: `4px solid ${getNodeBorderColor(node)}` }"
               >
                 <div class="flex items-center gap-2">
                   <Icon :icon="node.metadata.icon || 'ph:package'" class="text-xl"/>
@@ -60,23 +60,27 @@
 import {ref} from 'vue'
 import {Icon} from '@iconify/vue'
 import {NodeRegistry} from '../nodes/NodeRegistry'
-import {NodeCategory} from '../nodes/types'
+import {getNodeColor, NodeCategory, NodeVisualCategory} from '../nodes/types'
 
 const dialogRef = ref<HTMLDialogElement | null>(null)
 const searchQuery = ref('')
 
 const categories = [
-  NodeCategory.INPUT,
-  NodeCategory.PROCESSOR,
-  NodeCategory.OUTPUT,
-  NodeCategory.UTILITY
+  NodeVisualCategory.VIDEO,
+  NodeVisualCategory.AUDIO,
+  NodeVisualCategory.PROCESSING,
+  NodeVisualCategory.CONTROL_FLOW,
+  NodeVisualCategory.OUTPUT,
+  NodeVisualCategory.UTILITY
 ]
 
-const categoryLabels: Record<NodeCategory, string> = {
-  [NodeCategory.INPUT]: 'Input',
-  [NodeCategory.PROCESSOR]: 'Processors',
-  [NodeCategory.OUTPUT]: 'Output',
-  [NodeCategory.UTILITY]: 'Utilities'
+const categoryLabels: Record<NodeVisualCategory, string> = {
+  [NodeVisualCategory.VIDEO]: 'Video',
+  [NodeVisualCategory.AUDIO]: 'Audio',
+  [NodeVisualCategory.PROCESSING]: 'Processing',
+  [NodeVisualCategory.CONTROL_FLOW]: 'Control Flow',
+  [NodeVisualCategory.OUTPUT]: 'Output',
+  [NodeVisualCategory.UTILITY]: 'Utility'
 }
 
 function open() {
@@ -87,9 +91,42 @@ function close() {
   dialogRef.value?.close()
 }
 
-function getNodesByCategory(category: NodeCategory) {
-  let nodes = NodeRegistry.getByCategory(category)
+function getNodesByCategory(category: NodeVisualCategory) {
+  const all = [
+    ...NodeRegistry.getByCategory(NodeCategory.INPUT),
+    ...NodeRegistry.getByCategory(NodeCategory.PROCESSOR),
+    ...NodeRegistry.getByCategory(NodeCategory.OUTPUT),
+    ...NodeRegistry.getByCategory(NodeCategory.UTILITY)
+  ]
+
+  let nodes = all
       .filter(node => node.metadata.showInLibrary !== false)
+      .filter(node => {
+        const type = node.metadata.type
+        if (category === NodeVisualCategory.VIDEO) {
+          return ['generate-canvas', 'image', 'canvas-transform', 'canvas-merge'].includes(type)
+        }
+        if (category === NodeVisualCategory.AUDIO) {
+          return ['tone-synth'].includes(type)
+        }
+        if (category === NodeVisualCategory.CONTROL_FLOW) {
+          return ['if', 'loop'].includes(type)
+        }
+        if (category === NodeVisualCategory.OUTPUT) {
+          return ['audio-output', 'canvas-output', 'all-peers-output'].includes(type)
+        }
+        if (category === NodeVisualCategory.UTILITY) {
+          return ['comment', 'debug'].includes(type)
+        }
+        // Processing
+        return ![
+          'generate-canvas', 'image', 'canvas-transform', 'canvas-merge',
+          'tone-synth',
+          'if', 'loop',
+          'audio-output', 'canvas-output', 'all-peers-output',
+          'comment', 'debug'
+        ].includes(type)
+      })
 
   // Filter by search query
   if (searchQuery.value) {
@@ -102,6 +139,10 @@ function getNodesByCategory(category: NodeCategory) {
   }
 
   return nodes
+}
+
+function getNodeBorderColor(node: { metadata: any }): string {
+  return getNodeColor(node.metadata)
 }
 
 function onDragStart(event: DragEvent, nodeType: string) {

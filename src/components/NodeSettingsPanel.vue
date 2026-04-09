@@ -241,7 +241,7 @@
 import {computed, reactive} from 'vue'
 import {Icon} from '@iconify/vue'
 import type {BaseNode} from '../nodes/BaseNode'
-import type {NodeMetadata} from '../nodes/types'
+import {getNodeColor, type NodeMetadata} from '../nodes/types'
 import {useGraphStore} from '../stores/graphStore'
 import {useVariableStore} from '../stores/variableStore'
 
@@ -274,7 +274,7 @@ const availableVariables = computed(() => {
   return variableStore.allVariables.map(v => v.name)
 })
 
-const nodeColor = computed(() => props.metadata?.color || '#6b7280')
+const nodeColor = computed(() => getNodeColor(props.metadata))
 
 function getParameterValue(parameterId: string): any {
   if (!props.selectedNode) return undefined

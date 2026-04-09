@@ -92,7 +92,7 @@
 import {computed} from 'vue'
 import {Handle, Position} from '@vue-flow/core'
 import {BaseNode} from '../nodes/BaseNode'
-import {DATA_TYPE_COLORS, DataType, type NodeMetadata} from '../nodes/types'
+import {DATA_TYPE_COLORS, DataType, getNodeColor, type NodeMetadata} from '../nodes/types'
 import {Icon} from "@iconify/vue";
 import {useGraphStore} from '../stores/graphStore'
 import NodePreview from './NodePreview.vue'
@@ -117,7 +117,7 @@ const metadata = computed(() => props.data.metadata)
 const inputPorts = computed(() => node.value.getInputPorts())
 const outputPorts = computed(() => node.value.getOutputPorts())
 
-const nodeColor = computed(() => metadata.value?.color || '#6b7280')
+const nodeColor = computed(() => getNodeColor(metadata.value))
 const isSelected = computed(() => graphStore.selectedNodeId === node.value.id)
 
 const supportsPreview = computed(() => {

@@ -88,6 +88,63 @@ export interface NodeMetadata {
   showInLibrary?: boolean  // false = only addable via special UI (e.g. peer panel)
 }
 
+export const NodeVisualCategory = {
+  VIDEO: 'video',
+  AUDIO: 'audio',
+  PROCESSING: 'processing',
+  CONTROL_FLOW: 'control-flow',
+  OUTPUT: 'output',
+  UTILITY: 'utility'
+} as const
+
+export type NodeVisualCategory = typeof NodeVisualCategory[keyof typeof NodeVisualCategory]
+
+const NODE_VISUAL_COLORS: Record<NodeVisualCategory, string> = {
+  [NodeVisualCategory.VIDEO]: '#00BFE5',       // light blue / canvas
+  [NodeVisualCategory.AUDIO]: '#10b981',       // green
+  [NodeVisualCategory.PROCESSING]: '#f59e0b',  // amber
+  [NodeVisualCategory.CONTROL_FLOW]: '#0ea5e9',// sky
+  [NodeVisualCategory.OUTPUT]: '#2563eb',      // blue
+  [NodeVisualCategory.UTILITY]: '#6b7280'      // gray
+}
+
+export function getNodeVisualCategory(metadata: NodeMetadata | null | undefined): NodeVisualCategory {
+  if (!metadata) return NodeVisualCategory.PROCESSING
+
+  switch (metadata.type) {
+    case 'generate-canvas':
+    case 'image':
+    case 'canvas-transform':
+    case 'canvas-merge':
+    case 'peer':
+    case 'all-peers':
+      return NodeVisualCategory.VIDEO
+
+    case 'tone-synth':
+      return NodeVisualCategory.AUDIO
+
+    case 'if':
+    case 'loop':
+      return NodeVisualCategory.CONTROL_FLOW
+
+    case 'all-peers-output':
+      return NodeVisualCategory.OUTPUT
+
+    case 'comment':
+    case 'debug':
+      return NodeVisualCategory.UTILITY
+
+    default:
+      return NodeVisualCategory.PROCESSING
+  }
+}
+
+export function getNodeColor(metadata: NodeMetadata | null | undefined): string {
+  if (metadata?.type === 'audio-output') return DATA_TYPE_COLORS[DataType.AUDIO]
+  if (metadata?.type === 'canvas-output') return DATA_TYPE_COLORS[DataType.CANVAS]
+  return NODE_VISUAL_COLORS[getNodeVisualCategory(metadata)]
+}
+
 /**
  * Node parameter definition
  */
