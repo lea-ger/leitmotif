@@ -83,8 +83,8 @@ export interface NodeMetadata {
   category: NodeCategory
   displayName: string
   description: string
+  icon: string
   color?: string
-  icon?: string
   showInLibrary?: boolean  // false = only addable via special UI (e.g. peer panel)
 }
 
