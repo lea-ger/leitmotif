@@ -1,6 +1,6 @@
 import {defineStore} from 'pinia'
 import {computed, ref} from 'vue'
-import type {Connection as FlowConnection, Edge as FlowEdge} from '@vue-flow/core'
+import type {Connection as FlowConnection} from '@vue-flow/core'
 import {BaseNode} from '../nodes/BaseNode'
 import {NodeRegistry} from '../nodes/NodeRegistry'
 import {canConnect, type Connection, generateId} from '../nodes/types'
@@ -18,6 +18,15 @@ interface GraphFlowNode {
     label: string
 }
 
+interface GraphFlowEdge {
+    id: string
+    source: string
+    target: string
+    sourceHandle?: string
+    targetHandle?: string
+    animated?: boolean
+}
+
 /**
  * Graph store for managing nodes and connections
  */
@@ -29,7 +38,7 @@ export const useGraphStore = defineStore('graph', () => {
     const flowNodes = ref<GraphFlowNode[]>([])
 
     // Vue Flow edges (connections)
-    const flowEdges = ref<FlowEdge[]>([])
+    const flowEdges = ref<GraphFlowEdge[]>([])
 
     // Internal connections map
     const connections = ref<Map<string, Connection>>(new Map())
@@ -134,14 +143,15 @@ export const useGraphStore = defineStore('graph', () => {
         targetPort.connected = true
 
         // Add to Vue Flow
-        flowEdges.value.push({
+        const newFlowEdge: GraphFlowEdge = {
             id: connection.id,
             source: sourceNode.id,
             target: targetNode.id,
             sourceHandle: sourcePort.id,
             targetHandle: targetPort.id,
             animated: true
-        })
+        }
+        flowEdges.value.push(newFlowEdge)
 
         return true
     }
@@ -510,14 +520,15 @@ export const useGraphStore = defineStore('graph', () => {
                 sourcePort.connected = true
                 targetPort.connected = true
 
-                flowEdges.value.push({
+                const restoredFlowEdge: GraphFlowEdge = {
                     id: conn.id,
                     source: sourceNode.id,
                     target: targetNode.id,
                     sourceHandle: sourcePort.id,
                     targetHandle: targetPort.id,
                     animated: true
-                })
+                }
+                flowEdges.value.push(restoredFlowEdge)
             })
 
             if (Array.isArray(graphData.previewEnabled)) {
