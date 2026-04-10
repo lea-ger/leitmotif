@@ -46,7 +46,7 @@ export const useGraphStore = defineStore('graph', () => {
         const metadata = NodeRegistry.getMetadata(type)
         const flowType = type === 'comment' ? 'comment' : 'custom'
 
-        flowNodes.value = [...flowNodes.value, {
+        const newFlowNode = {
             id: node.id,
             type: flowType,
             position,
@@ -55,7 +55,9 @@ export const useGraphStore = defineStore('graph', () => {
                 metadata
             },
             label: metadata?.displayName || type
-        }]
+        } as FlowNode
+
+        flowNodes.value = [...flowNodes.value, newFlowNode]
 
         return node
     }
@@ -470,13 +472,15 @@ export const useGraphStore = defineStore('graph', () => {
                 const metadata = NodeRegistry.getMetadata(nodeData.type)
                 const flowType = nodeData.type === 'comment' ? 'comment' : 'custom'
 
-                flowNodes.value.push({
+                const restoredFlowNode = {
                     id: node.id,
                     type: flowType,
                     position: nodeData.position,
                     data: {node, metadata},
                     label: metadata?.displayName || nodeData.type
-                })
+                } as FlowNode
+
+                flowNodes.value.push(restoredFlowNode)
             })
 
             graphData.connections.forEach((conn: Connection) => {
