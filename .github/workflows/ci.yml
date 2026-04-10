@@ -29,6 +29,8 @@ jobs:
         run: bun install
 
       - name: Build
+        env:
+          VITE_BASE_PATH: /leitmotif/
         run: bun run build
 
       - name: Upload artifact

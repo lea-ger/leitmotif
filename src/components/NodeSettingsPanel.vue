@@ -244,6 +244,7 @@ import type {BaseNode} from '../nodes/BaseNode'
 import {getNodeColor, type NodeMetadata} from '../nodes/types'
 import {useGraphStore} from '../stores/graphStore'
 import {useVariableStore} from '../stores/variableStore'
+import router from '../router'
 
 interface Props {
   selectedNode: BaseNode | null
@@ -315,8 +316,10 @@ function fillVariableName(varName: string): void {
 }
 
 function getDocLink(): string {
-  if (!props.selectedNode) return '/learn/node-reference'
-  return `/learn/node-reference#node-${props.selectedNode.type}`
+  const basePath = props.selectedNode
+    ? `/learn/node-reference#node-${props.selectedNode.type}`
+    : '/learn/node-reference'
+  return router.resolve(basePath).href
 }
 
 function toggleParameterExposure(parameterId: string): void {

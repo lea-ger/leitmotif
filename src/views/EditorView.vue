@@ -243,6 +243,7 @@ import NodeSettingsPanel from "../components/NodeSettingsPanel.vue";
 import CanvasOutputWindow from "../components/CanvasOutputWindow.vue";
 import {NodeRegistry} from '../nodes/NodeRegistry';
 import {DEMO_WORKFLOWS} from '../data/demoWorkflows'
+import router from '../router'
 
 // Register all node types
 registerAllNodes()
@@ -339,7 +340,8 @@ function clearGraph() {
 }
 
 function openLearnPage() {
-  window.open('/learn', '_blank')
+  const learnHref = router.resolve({name: 'learn'}).href
+  window.open(learnHref, '_blank')
 }
 
 /**

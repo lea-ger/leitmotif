@@ -60,9 +60,11 @@ export const useSessionStore = defineStore('session', () => {
    */
   const joinUrl = computed(() => {
     if (!roomKey.value && !peerId.value) return ''
-    const baseUrl = window.location.origin
     const key = roomKey.value || peerId.value
-    return `${baseUrl}/client/${encodeURIComponent(key)}`
+    const basePath = import.meta.env.BASE_URL || '/'
+    const normalizedBasePath = basePath.endsWith('/') ? basePath : `${basePath}/`
+    const clientPath = `${normalizedBasePath}client/${encodeURIComponent(key)}`
+    return new URL(clientPath, window.location.origin).toString()
   })
 
   /**
