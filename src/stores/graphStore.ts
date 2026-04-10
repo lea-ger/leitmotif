@@ -1,11 +1,22 @@
 import {defineStore} from 'pinia'
 import {computed, ref} from 'vue'
-import type {Connection as FlowConnection, Edge as FlowEdge, Node as FlowNode} from '@vue-flow/core'
+import type {Connection as FlowConnection, Edge as FlowEdge} from '@vue-flow/core'
 import {BaseNode} from '../nodes/BaseNode'
 import {NodeRegistry} from '../nodes/NodeRegistry'
 import {canConnect, type Connection, generateId} from '../nodes/types'
 import type { LayoutName } from './types/peer'
 import * as storage from '../utils/storage'
+
+interface GraphFlowNode {
+    id: string
+    type: string
+    position: { x: number; y: number }
+    data: {
+        node: BaseNode
+        metadata: ReturnType<typeof NodeRegistry.getMetadata>
+    }
+    label: string
+}
 
 /**
  * Graph store for managing nodes and connections
@@ -15,7 +26,7 @@ export const useGraphStore = defineStore('graph', () => {
     const nodeInstances = ref<Map<string, BaseNode>>(new Map())
 
     // Vue Flow nodes (for rendering)
-    const flowNodes = ref<FlowNode[]>([])
+    const flowNodes = ref<GraphFlowNode[]>([])
 
     // Vue Flow edges (connections)
     const flowEdges = ref<FlowEdge[]>([])
@@ -46,7 +57,7 @@ export const useGraphStore = defineStore('graph', () => {
         const metadata = NodeRegistry.getMetadata(type)
         const flowType = type === 'comment' ? 'comment' : 'custom'
 
-        const newFlowNode = {
+        const newFlowNode: GraphFlowNode = {
             id: node.id,
             type: flowType,
             position,
@@ -55,9 +66,9 @@ export const useGraphStore = defineStore('graph', () => {
                 metadata
             },
             label: metadata?.displayName || type
-        } as FlowNode
+        }
 
-        flowNodes.value = [...flowNodes.value, newFlowNode]
+        flowNodes.value.push(newFlowNode)
 
         return node
     }
@@ -472,13 +483,13 @@ export const useGraphStore = defineStore('graph', () => {
                 const metadata = NodeRegistry.getMetadata(nodeData.type)
                 const flowType = nodeData.type === 'comment' ? 'comment' : 'custom'
 
-                const restoredFlowNode = {
+                const restoredFlowNode: GraphFlowNode = {
                     id: node.id,
                     type: flowType,
                     position: nodeData.position,
                     data: {node, metadata},
                     label: metadata?.displayName || nodeData.type
-                } as FlowNode
+                }
 
                 flowNodes.value.push(restoredFlowNode)
             })
