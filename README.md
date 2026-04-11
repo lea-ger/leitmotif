@@ -7,7 +7,7 @@ Leitmotif is a node-based creative tool for collaborative/participative audiovis
 It's kind of like [Touchdesigner](https://derivative.ca/) or [cables](https://cables.gl/), but web-based and designed for real-time collaboration and performance. 
 It allows artists, designers, educators, and developers to create interactive audiovisual experiences that let you use your audience as a creative material.
 
-Check it out live: [https://lea-ger.github.io/leitmotif/](https://lea-ger.github.io/leitmotif/).
+Check it out live: [https://leitmotif.le-ger.com](https://leitmotif.le-ger.com).
 
 The project is built with Vue.js and Bun, leveraging WebRTC for peer-to-peer communication.
 
@@ -53,7 +53,7 @@ bun run preview
 
 ## Usage
 
-For learning how to use Leitmotif, the best way is to check out the [in-app documentation](https://lea-ger.github.io/leitmotif/learn/)!
+For learning how to use Leitmotif, the best way is to check out the [in-app documentation](https://leitmotif.le-ger.com/learn)!
 
 ## Repository Structure
 
