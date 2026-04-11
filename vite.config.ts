@@ -5,13 +5,12 @@ import basicSsl from '@vitejs/plugin-basic-ssl'
 
 // https://vite.dev/config/
 export default defineConfig({
-  base: '/leitmotif/',
   plugins: [
     vue(),
     tailwindcss(),
     basicSsl(),
   ],
   server: {
-    allowedHosts: ['localhost', 'exploratively-older-tressa.ngrok-free.dev'],
+    allowedHosts: ['localhost', 'exploratively-older-tressa.ngrok-free.dev', 'leitmotif.le-ger.com/'],
   }
 })
