@@ -20,12 +20,13 @@ export const PEER_OPTIONS: PeerOptions = {
       { urls: 'stun:stun1.l.google.com:19302' },
       {
         urls: [
+            'leitmotif.metered.live;80',
           'turn:openrelay.metered.ca:80',
           'turn:openrelay.metered.ca:443',
           'turns:openrelay.metered.ca:443',
         ],
-        username: 'openrelayproject',
-        credential: 'openrelayproject',
+        username: 'leitmotif',
+        credential: 'M4HmD2UGMUhr1Dgk09N52o5SWGn-jiAgUTQ3e02PVIVacew2',
       },
     ],
   },
